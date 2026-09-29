@@ -2561,11 +2561,9 @@ export default function StoryContentEditor({
 
 
                 <SentenceVocabularyEditor
-
-                  sentenceId={sentence.id}
-
-                />
-
+  sentenceId={sentence.id}
+  learningLanguage={learningLanguage}
+/>
               </>
 
             )}
