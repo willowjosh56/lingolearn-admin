@@ -66,6 +66,198 @@ export default function StoryContentEditor({
   const [creatingSentence, setCreatingSentence] =
     useState(false);
 
+    const [bulkImportOpen, setBulkImportOpen] =
+  useState(false);
+
+      // BULK SENTENCE IMPORT
+
+  const [bulkImportChapterId, setBulkImportChapterId] =
+    useState<string | null>(null);
+
+  const [bulkImportText, setBulkImportText] =
+    useState("");
+
+  const [importingSentences, setImportingSentences] =
+    useState(false);
+
+      // --------------------------------------------------
+  // BULK SENTENCE IMPORT
+  // --------------------------------------------------
+
+function openBulkImport(
+  chapterId: string | null
+) {
+  clearMessage();
+
+  setBulkImportChapterId(chapterId);
+  setBulkImportText("");
+  setBulkImportOpen(true);
+}
+
+function cancelBulkImport() {
+  setBulkImportOpen(false);
+  setBulkImportChapterId(null);
+  setBulkImportText("");
+}
+  async function importBulkSentences() {
+    if (importingSentences) return;
+
+    const cleanText = bulkImportText.trim();
+
+    if (!cleanText) {
+      setMessage(
+        "Paste at least one sentence to import."
+      );
+      return;
+    }
+
+    /*
+      Expected format:
+
+      English | Russian | Pronunciation
+      English | Russian | Pronunciation
+
+      Pronunciation is optional.
+
+      Blank lines are ignored.
+    */
+
+    const lines = cleanText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (lines.length === 0) {
+      setMessage(
+        "Paste at least one sentence to import."
+      );
+      return;
+    }
+
+    const parsedRows: {
+      source_text: string;
+      translated_text: string;
+      pronunciation: string;
+    }[] = [];
+
+    for (
+      let index = 0;
+      index < lines.length;
+      index += 1
+    ) {
+      const line = lines[index];
+
+      const parts = line
+        .split("|")
+        .map((part) => part.trim());
+
+      if (parts.length < 2) {
+        setMessage(
+          `Line ${
+            index + 1
+          } is invalid. Use: English | Russian | Pronunciation`
+        );
+        return;
+      }
+
+      const english = parts[0];
+      const russian = parts[1];
+
+      /*
+        If pronunciation itself ever contains a pipe,
+        joining the remaining pieces prevents us from
+        silently throwing text away.
+      */
+      const pronunciation = parts
+        .slice(2)
+        .join("|")
+        .trim();
+
+      if (!english || !russian) {
+        setMessage(
+          `Line ${
+            index + 1
+          } needs both English and Russian text.`
+        );
+        return;
+      }
+
+      parsedRows.push({
+        source_text: english,
+        translated_text: russian,
+        pronunciation,
+      });
+    }
+
+    setImportingSentences(true);
+    clearMessage();
+
+    const nextTemporaryPosition =
+      sentences.length === 0
+        ? 1
+        : Math.max(
+            ...sentences.map(
+              (sentence) => sentence.position
+            )
+          ) + 1;
+
+    const rowsToInsert = parsedRows.map(
+      (row, index) => ({
+        book_id: bookId,
+        chapter_id: bulkImportChapterId,
+        position:
+          nextTemporaryPosition + index,
+        source_text: row.source_text,
+        translated_text:
+          row.translated_text,
+        pronunciation:
+          row.pronunciation,
+      })
+    );
+
+    const { error } = await supabase
+      .from("sentences")
+      .insert(rowsToInsert);
+
+    if (error) {
+      setMessage(
+        `Could not import sentences: ${error.message}`
+      );
+
+      setImportingSentences(false);
+      return;
+    }
+
+    try {
+      await reorderBook();
+      await loadContent(false);
+
+      setBulkImportOpen(false);
+setBulkImportChapterId(null);
+setBulkImportText("");
+
+      setMessage(
+        `${parsedRows.length} ${
+          parsedRows.length === 1
+            ? "sentence"
+            : "sentences"
+        } imported successfully.`
+      );
+    } catch (reorderError) {
+      await loadContent(false);
+
+      setMessage(
+        `Sentences were imported, but positions could not be reordered: ${
+          reorderError instanceof Error
+            ? reorderError.message
+            : "Unknown error"
+        }`
+      );
+    }
+
+    setImportingSentences(false);
+  }
+
   // CHAPTERS
   const [addingChapter, setAddingChapter] =
     useState(false);
@@ -279,6 +471,98 @@ export default function StoryContentEditor({
 
     setDeletingSentenceId(null);
   }
+
+        {/* BULK SENTENCE IMPORT */}
+
+      {bulkImportOpen && (
+        <div className="mt-6 rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h3 className="font-semibold">
+                Bulk import sentences
+              </h3>
+
+              <p className="mt-1 text-sm text-neutral-500">
+                {`Importing into ${
+                  chapters.find(
+                    (chapter) =>
+                      chapter.id ===
+                      bulkImportChapterId
+                  )?.title ?? "chapter"
+                }.`}
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-white px-3 py-2 text-xs text-neutral-500 shadow-sm">
+              English | Russian | Pronunciation
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              Sentences
+            </label>
+
+            <textarea
+              value={bulkImportText}
+              onChange={(event) =>
+                setBulkImportText(
+                  event.target.value
+                )
+              }
+              rows={12}
+              placeholder={`I was nervous, but I was not mad. | Я нервничал, но я не был сумасшедшим. | ya nerv-nee-chal...
+I loved the old man. | Я любил старика. | ya lyu-beel...
+But I hated his pale blue eye. | Но я ненавидел его бледно-голубой глаз. | no ya...`}
+              className="w-full resize-y rounded-xl border border-neutral-200 bg-white px-4 py-3 font-mono text-sm leading-7 outline-none transition focus:border-neutral-400"
+            />
+
+            <p className="mt-2 text-xs leading-5 text-neutral-400">
+              One sentence per line. Separate
+              English, Russian and pronunciation
+              with |. Pronunciation is optional.
+              Blank lines are ignored.
+            </p>
+          </div>
+
+          <div className="mt-5 flex items-center justify-between gap-4 border-t border-neutral-200 pt-5">
+            <p className="text-sm text-neutral-500">
+              {
+                bulkImportText
+                  .split("\n")
+                  .map((line) => line.trim())
+                  .filter(Boolean).length
+              }{" "}
+              lines ready
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={cancelBulkImport}
+                disabled={importingSentences}
+                className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold transition hover:bg-neutral-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={importBulkSentences}
+                disabled={
+                  importingSentences ||
+                  !bulkImportText.trim()
+                }
+                className="rounded-xl bg-[#181818] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-50"
+              >
+                {importingSentences
+                  ? "Importing..."
+                  : "Import Sentences"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
   // --------------------------------------------------
   // ADD SENTENCE
@@ -1154,6 +1438,25 @@ export default function StoryContentEditor({
                           : "sentences"}
                       </p>
                     </div>
+
+                                        <button
+                      type="button"
+                      onClick={() =>
+                        openBulkImport(
+                          chapter.id
+                        )
+                      }
+                      disabled={
+  addingSentence ||
+  bulkImportOpen ||
+  editingSentenceId !== null ||
+  editingChapterId !== null ||
+  importingSentences
+}
+                      className="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-semibold transition hover:bg-neutral-50 disabled:opacity-40"
+                    >
+                      Bulk Import
+                    </button>
 
                     <div className="flex flex-wrap gap-2">
                       <button
