@@ -10,6 +10,13 @@ import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { Book } from "@/lib/types";
 import StoryContentEditor from "@/components/StoryContentEditor";
+type Category =
+  | "everyday"
+  | "travel"
+  | "mystery"
+  | "romance"
+  | "adventure"
+  | "food";
 
 export default function StoryEditorPage() {
   const params = useParams();
@@ -22,6 +29,8 @@ export default function StoryEditorPage() {
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [level, setLevel] = useState("A1");
+  const [category, setCategory] =
+  useState<Category>("everyday");
   const [estimatedMinutes, setEstimatedMinutes] =
     useState("");
   const [sortOrder, setSortOrder] = useState("");
@@ -81,6 +90,9 @@ export default function StoryEditorPage() {
     setTitle(updatedBook.title);
     setSubtitle(updatedBook.subtitle ?? "");
     setLevel(updatedBook.level);
+    setCategory(
+  (updatedBook.category ?? "everyday") as Category
+);
 
     setEstimatedMinutes(
       updatedBook.estimated_minutes?.toString() ?? ""
@@ -268,13 +280,14 @@ export default function StoryEditorPage() {
 
     const { data, error } = await supabase
       .from("books")
-      .update({
-        title: cleanTitle,
-        subtitle: subtitle.trim(),
-        level,
-        estimated_minutes: minutes,
-        sort_order: order,
-      })
+     .update({
+  title: cleanTitle,
+  subtitle: subtitle.trim(),
+  level,
+  category,
+  estimated_minutes: minutes,
+  sort_order: order,
+})
       .eq("id", book.id)
       .select("*")
       .single();
@@ -605,6 +618,50 @@ export default function StoryEditorPage() {
                     />
                   </div>
                 </div>
+
+                <div>
+  <label className="mb-2 block text-sm font-medium">
+    Category
+  </label>
+
+  <select
+    value={category}
+    onChange={(event) =>
+      setCategory(
+        event.target.value as Category
+      )
+    }
+    className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-400"
+  >
+    <option value="everyday">
+      Everyday
+    </option>
+
+    <option value="travel">
+      Travel
+    </option>
+
+    <option value="mystery">
+      Mystery
+    </option>
+
+    <option value="romance">
+      Romance
+    </option>
+
+    <option value="adventure">
+      Adventure
+    </option>
+
+    <option value="food">
+      Food
+    </option>
+  </select>
+
+  <p className="mt-2 text-xs text-neutral-400">
+    Used to organize and filter stories in the app.
+  </p>
+</div>
 
                 <div className="grid gap-6 border-t border-neutral-100 pt-6 sm:grid-cols-2">
                   <ReadOnlyField
