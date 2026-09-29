@@ -7,6 +7,14 @@ import { supabase } from "@/lib/supabase";
 
 type ContentType = "original" | "classic";
 
+type Category =
+  | "everyday"
+  | "travel"
+  | "mystery"
+  | "romance"
+  | "adventure"
+  | "food";
+
 export default function NewStoryPage() {
   const router = useRouter();
 
@@ -16,6 +24,9 @@ export default function NewStoryPage() {
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [level, setLevel] = useState("A1");
+  const [category, setCategory] =
+    useState<Category>("everyday");
+
   const [estimatedMinutes, setEstimatedMinutes] =
     useState("5");
 
@@ -118,10 +129,6 @@ export default function NewStoryPage() {
       return;
     }
 
-    /*
-      If the same title already exists, create a unique
-      slug instead of failing.
-    */
     let slug = baseSlug;
 
     const { data: existingBook } = await supabase
@@ -144,10 +151,15 @@ export default function NewStoryPage() {
           subtitle: subtitle.trim(),
 
           slug,
+
           source_language: "en",
           learning_language: "ru",
+
           level,
+          category,
+
           estimated_minutes: minutes,
+
           status: "draft",
           sort_order: 100,
           published_at: null,
@@ -348,6 +360,53 @@ export default function NewStoryPage() {
                   min="1"
                   placeholder="5"
                 />
+              </div>
+
+              {/* CATEGORY */}
+
+              <div>
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-400">
+                  Category
+                </label>
+
+                <select
+                  value={category}
+                  onChange={(event) =>
+                    setCategory(
+                      event.target.value as Category
+                    )
+                  }
+                  className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-neutral-400"
+                >
+                  <option value="everyday">
+                    Everyday
+                  </option>
+
+                  <option value="travel">
+                    Travel
+                  </option>
+
+                  <option value="mystery">
+                    Mystery
+                  </option>
+
+                  <option value="romance">
+                    Romance
+                  </option>
+
+                  <option value="adventure">
+                    Adventure
+                  </option>
+
+                  <option value="food">
+                    Food
+                  </option>
+                </select>
+
+                <p className="mt-2 text-xs text-neutral-400">
+                  Used to organize and filter stories
+                  in the app.
+                </p>
               </div>
             </div>
           </section>
