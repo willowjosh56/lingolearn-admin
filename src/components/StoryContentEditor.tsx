@@ -36,7 +36,10 @@ export default function StoryContentEditor({
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
+  // --------------------------------------------------
   // SENTENCE EDITING
+  // --------------------------------------------------
+
   const [editingSentenceId, setEditingSentenceId] =
     useState<string | null>(null);
 
@@ -51,7 +54,10 @@ export default function StoryContentEditor({
   const [deletingSentenceId, setDeletingSentenceId] =
     useState<string | null>(null);
 
+  // --------------------------------------------------
   // ADD SENTENCE
+  // --------------------------------------------------
+
   const [addingSentence, setAddingSentence] =
     useState(false);
 
@@ -66,10 +72,12 @@ export default function StoryContentEditor({
   const [creatingSentence, setCreatingSentence] =
     useState(false);
 
-    const [bulkImportOpen, setBulkImportOpen] =
-  useState(false);
+  // --------------------------------------------------
+  // BULK SENTENCE IMPORT
+  // --------------------------------------------------
 
-      // BULK SENTENCE IMPORT
+  const [bulkImportOpen, setBulkImportOpen] =
+    useState(false);
 
   const [bulkImportChapterId, setBulkImportChapterId] =
     useState<string | null>(null);
@@ -80,185 +88,28 @@ export default function StoryContentEditor({
   const [importingSentences, setImportingSentences] =
     useState(false);
 
-      // --------------------------------------------------
-  // BULK SENTENCE IMPORT
+  // --------------------------------------------------
+  // BULK VOCABULARY IMPORT
   // --------------------------------------------------
 
-function openBulkImport(
-  chapterId: string | null
-) {
-  clearMessage();
+  const [bulkVocabularyOpen, setBulkVocabularyOpen] =
+    useState(false);
 
-  setBulkImportChapterId(chapterId);
-  setBulkImportText("");
-  setBulkImportOpen(true);
-}
+  const [
+    bulkVocabularyChapterId,
+    setBulkVocabularyChapterId,
+  ] = useState<string | null>(null);
 
-function cancelBulkImport() {
-  setBulkImportOpen(false);
-  setBulkImportChapterId(null);
-  setBulkImportText("");
-}
-  async function importBulkSentences() {
-    if (importingSentences) return;
+  const [bulkVocabularyText, setBulkVocabularyText] =
+    useState("");
 
-    const cleanText = bulkImportText.trim();
+  const [importingVocabulary, setImportingVocabulary] =
+    useState(false);
 
-    if (!cleanText) {
-      setMessage(
-        "Paste at least one sentence to import."
-      );
-      return;
-    }
-
-    /*
-      Expected format:
-
-      English | Russian | Pronunciation
-      English | Russian | Pronunciation
-
-      Pronunciation is optional.
-
-      Blank lines are ignored.
-    */
-
-    const lines = cleanText
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean);
-
-    if (lines.length === 0) {
-      setMessage(
-        "Paste at least one sentence to import."
-      );
-      return;
-    }
-
-    const parsedRows: {
-      source_text: string;
-      translated_text: string;
-      pronunciation: string;
-    }[] = [];
-
-    for (
-      let index = 0;
-      index < lines.length;
-      index += 1
-    ) {
-      const line = lines[index];
-
-      const parts = line
-        .split("|")
-        .map((part) => part.trim());
-
-      if (parts.length < 2) {
-        setMessage(
-          `Line ${
-            index + 1
-          } is invalid. Use: English | Russian | Pronunciation`
-        );
-        return;
-      }
-
-      const english = parts[0];
-      const russian = parts[1];
-
-      /*
-        If pronunciation itself ever contains a pipe,
-        joining the remaining pieces prevents us from
-        silently throwing text away.
-      */
-      const pronunciation = parts
-        .slice(2)
-        .join("|")
-        .trim();
-
-      if (!english || !russian) {
-        setMessage(
-          `Line ${
-            index + 1
-          } needs both English and Russian text.`
-        );
-        return;
-      }
-
-      parsedRows.push({
-        source_text: english,
-        translated_text: russian,
-        pronunciation,
-      });
-    }
-
-    setImportingSentences(true);
-    clearMessage();
-
-    const nextTemporaryPosition =
-      sentences.length === 0
-        ? 1
-        : Math.max(
-            ...sentences.map(
-              (sentence) => sentence.position
-            )
-          ) + 1;
-
-    const rowsToInsert = parsedRows.map(
-      (row, index) => ({
-        book_id: bookId,
-        chapter_id: bulkImportChapterId,
-        position:
-          nextTemporaryPosition + index,
-        source_text: row.source_text,
-        translated_text:
-          row.translated_text,
-        pronunciation:
-          row.pronunciation,
-      })
-    );
-
-    const { error } = await supabase
-      .from("sentences")
-      .insert(rowsToInsert);
-
-    if (error) {
-      setMessage(
-        `Could not import sentences: ${error.message}`
-      );
-
-      setImportingSentences(false);
-      return;
-    }
-
-    try {
-      await reorderBook();
-      await loadContent(false);
-
-      setBulkImportOpen(false);
-setBulkImportChapterId(null);
-setBulkImportText("");
-
-      setMessage(
-        `${parsedRows.length} ${
-          parsedRows.length === 1
-            ? "sentence"
-            : "sentences"
-        } imported successfully.`
-      );
-    } catch (reorderError) {
-      await loadContent(false);
-
-      setMessage(
-        `Sentences were imported, but positions could not be reordered: ${
-          reorderError instanceof Error
-            ? reorderError.message
-            : "Unknown error"
-        }`
-      );
-    }
-
-    setImportingSentences(false);
-  }
-
+  // --------------------------------------------------
   // CHAPTERS
+  // --------------------------------------------------
+
   const [addingChapter, setAddingChapter] =
     useState(false);
 
@@ -283,13 +134,15 @@ setBulkImportText("");
   const [deletingChapterId, setDeletingChapterId] =
     useState<string | null>(null);
 
+  // --------------------------------------------------
+  // LOAD CONTENT
+  // --------------------------------------------------
+
   useEffect(() => {
     loadContent();
   }, [bookId]);
 
-  async function loadContent(
-    showLoading = true
-  ) {
+  async function loadContent(showLoading = true) {
     if (showLoading) {
       setLoading(true);
     }
@@ -472,98 +325,6 @@ setBulkImportText("");
     setDeletingSentenceId(null);
   }
 
-        {/* BULK SENTENCE IMPORT */}
-
-      {bulkImportOpen && (
-        <div className="mt-6 rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h3 className="font-semibold">
-                Bulk import sentences
-              </h3>
-
-              <p className="mt-1 text-sm text-neutral-500">
-                {`Importing into ${
-                  chapters.find(
-                    (chapter) =>
-                      chapter.id ===
-                      bulkImportChapterId
-                  )?.title ?? "chapter"
-                }.`}
-              </p>
-            </div>
-
-            <div className="rounded-lg bg-white px-3 py-2 text-xs text-neutral-500 shadow-sm">
-              English | Russian | Pronunciation
-            </div>
-          </div>
-
-          <div className="mt-5">
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-400">
-              Sentences
-            </label>
-
-            <textarea
-              value={bulkImportText}
-              onChange={(event) =>
-                setBulkImportText(
-                  event.target.value
-                )
-              }
-              rows={12}
-              placeholder={`I was nervous, but I was not mad. | Я нервничал, но я не был сумасшедшим. | ya nerv-nee-chal...
-I loved the old man. | Я любил старика. | ya lyu-beel...
-But I hated his pale blue eye. | Но я ненавидел его бледно-голубой глаз. | no ya...`}
-              className="w-full resize-y rounded-xl border border-neutral-200 bg-white px-4 py-3 font-mono text-sm leading-7 outline-none transition focus:border-neutral-400"
-            />
-
-            <p className="mt-2 text-xs leading-5 text-neutral-400">
-              One sentence per line. Separate
-              English, Russian and pronunciation
-              with |. Pronunciation is optional.
-              Blank lines are ignored.
-            </p>
-          </div>
-
-          <div className="mt-5 flex items-center justify-between gap-4 border-t border-neutral-200 pt-5">
-            <p className="text-sm text-neutral-500">
-              {
-                bulkImportText
-                  .split("\n")
-                  .map((line) => line.trim())
-                  .filter(Boolean).length
-              }{" "}
-              lines ready
-            </p>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={cancelBulkImport}
-                disabled={importingSentences}
-                className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold transition hover:bg-neutral-50 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                onClick={importBulkSentences}
-                disabled={
-                  importingSentences ||
-                  !bulkImportText.trim()
-                }
-                className="rounded-xl bg-[#181818] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-50"
-              >
-                {importingSentences
-                  ? "Importing..."
-                  : "Import Sentences"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
   // --------------------------------------------------
   // ADD SENTENCE
   // --------------------------------------------------
@@ -664,17 +425,432 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
   }
 
   // --------------------------------------------------
+  // BULK SENTENCE IMPORT
+  // --------------------------------------------------
+
+  function openBulkImport(
+    chapterId: string | null
+  ) {
+    clearMessage();
+
+    setBulkVocabularyOpen(false);
+    setBulkVocabularyChapterId(null);
+    setBulkVocabularyText("");
+
+    setBulkImportChapterId(chapterId);
+    setBulkImportText("");
+    setBulkImportOpen(true);
+  }
+
+  function cancelBulkImport() {
+    setBulkImportOpen(false);
+    setBulkImportChapterId(null);
+    setBulkImportText("");
+  }
+
+  async function importBulkSentences() {
+    if (importingSentences) return;
+
+    const cleanText = bulkImportText.trim();
+
+    if (!cleanText) {
+      setMessage(
+        "Paste at least one sentence to import."
+      );
+      return;
+    }
+
+    const lines = cleanText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (lines.length === 0) {
+      setMessage(
+        "Paste at least one sentence to import."
+      );
+      return;
+    }
+
+    const parsedRows: {
+      source_text: string;
+      translated_text: string;
+      pronunciation: string;
+    }[] = [];
+
+    for (
+      let index = 0;
+      index < lines.length;
+      index += 1
+    ) {
+      const line = lines[index];
+
+      const parts = line
+        .split("|")
+        .map((part) => part.trim());
+
+      if (parts.length < 2) {
+        setMessage(
+          `Line ${
+            index + 1
+          } is invalid. Use: English | Russian | Pronunciation`
+        );
+        return;
+      }
+
+      const english = parts[0];
+      const russian = parts[1];
+
+      const pronunciation = parts
+        .slice(2)
+        .join("|")
+        .trim();
+
+      if (!english || !russian) {
+        setMessage(
+          `Line ${
+            index + 1
+          } needs both English and Russian text.`
+        );
+        return;
+      }
+
+      parsedRows.push({
+        source_text: english,
+        translated_text: russian,
+        pronunciation,
+      });
+    }
+
+    setImportingSentences(true);
+    clearMessage();
+
+    const nextTemporaryPosition =
+      sentences.length === 0
+        ? 1
+        : Math.max(
+            ...sentences.map(
+              (sentence) => sentence.position
+            )
+          ) + 1;
+
+    const rowsToInsert = parsedRows.map(
+      (row, index) => ({
+        book_id: bookId,
+        chapter_id: bulkImportChapterId,
+        position:
+          nextTemporaryPosition + index,
+        source_text: row.source_text,
+        translated_text:
+          row.translated_text,
+        pronunciation:
+          row.pronunciation,
+      })
+    );
+
+    const { error } = await supabase
+      .from("sentences")
+      .insert(rowsToInsert);
+
+    if (error) {
+      setMessage(
+        `Could not import sentences: ${error.message}`
+      );
+
+      setImportingSentences(false);
+      return;
+    }
+
+    try {
+      await reorderBook();
+      await loadContent(false);
+
+      setBulkImportOpen(false);
+      setBulkImportChapterId(null);
+      setBulkImportText("");
+
+      setMessage(
+        `${parsedRows.length} ${
+          parsedRows.length === 1
+            ? "sentence"
+            : "sentences"
+        } imported successfully.`
+      );
+    } catch (reorderError) {
+      await loadContent(false);
+
+      setMessage(
+        `Sentences were imported, but positions could not be reordered: ${
+          reorderError instanceof Error
+            ? reorderError.message
+            : "Unknown error"
+        }`
+      );
+    }
+
+    setImportingSentences(false);
+  }
+
+  // --------------------------------------------------
+  // BULK VOCABULARY IMPORT
+  // --------------------------------------------------
+
+  function openBulkVocabularyImport(
+    chapterId: string
+  ) {
+    clearMessage();
+
+    setBulkImportOpen(false);
+    setBulkImportChapterId(null);
+    setBulkImportText("");
+
+    setBulkVocabularyChapterId(chapterId);
+    setBulkVocabularyText("");
+    setBulkVocabularyOpen(true);
+  }
+
+  function cancelBulkVocabularyImport() {
+    setBulkVocabularyOpen(false);
+    setBulkVocabularyChapterId(null);
+    setBulkVocabularyText("");
+  }
+
+  async function importBulkVocabulary() {
+    if (importingVocabulary) return;
+
+    const cleanText =
+      bulkVocabularyText.trim();
+
+    if (!cleanText) {
+      setMessage(
+        "Paste at least one vocabulary item to import."
+      );
+      return;
+    }
+
+    if (!bulkVocabularyChapterId) {
+      setMessage(
+        "Could not determine which chapter to import vocabulary into."
+      );
+      return;
+    }
+
+    const chapterSentences = sentences
+      .filter(
+        (sentence) =>
+          sentence.chapter_id ===
+          bulkVocabularyChapterId
+      )
+      .sort(
+        (a, b) =>
+          a.position - b.position
+      );
+
+    if (chapterSentences.length === 0) {
+      setMessage(
+        "This chapter does not contain any sentences yet."
+      );
+      return;
+    }
+
+    const lines = cleanText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    type ParsedVocabulary = {
+      sentenceId: string;
+      word: string;
+      translation: string;
+      pronunciation: string;
+    };
+
+    const parsedRows: ParsedVocabulary[] = [];
+
+    for (
+      let index = 0;
+      index < lines.length;
+      index += 1
+    ) {
+      const parts = lines[index]
+        .split("|")
+        .map((part) => part.trim());
+
+      if (parts.length < 3) {
+        setMessage(
+          `Line ${
+            index + 1
+          } is invalid. Use: Sentence # | Russian | English | Pronunciation`
+        );
+        return;
+      }
+
+      const sentenceNumber = Number(parts[0]);
+      const word = parts[1];
+      const translation = parts[2];
+
+      const pronunciation = parts
+        .slice(3)
+        .join("|")
+        .trim();
+
+      if (
+        !Number.isInteger(sentenceNumber) ||
+        sentenceNumber < 1
+      ) {
+        setMessage(
+          `Line ${
+            index + 1
+          } has an invalid sentence number.`
+        );
+        return;
+      }
+
+      if (
+        sentenceNumber >
+        chapterSentences.length
+      ) {
+        setMessage(
+          `Line ${
+            index + 1
+          } refers to sentence ${sentenceNumber}, but this chapter only has ${chapterSentences.length} sentences.`
+        );
+        return;
+      }
+
+      if (!word || !translation) {
+        setMessage(
+          `Line ${
+            index + 1
+          } needs both a Russian word and English translation.`
+        );
+        return;
+      }
+
+      const targetSentence =
+        chapterSentences[
+          sentenceNumber - 1
+        ];
+
+      parsedRows.push({
+        sentenceId: targetSentence.id,
+        word,
+        translation,
+        pronunciation,
+      });
+    }
+
+    setImportingVocabulary(true);
+    clearMessage();
+
+    const sentenceIds =
+      chapterSentences.map(
+        (sentence) => sentence.id
+      );
+
+    const {
+      data: existingVocabulary,
+      error: existingVocabularyError,
+    } = await supabase
+      .from("vocabulary_items")
+      .select(
+        "sentence_id, sort_order"
+      )
+      .in("sentence_id", sentenceIds);
+
+    if (existingVocabularyError) {
+      setMessage(
+        `Could not check existing vocabulary: ${existingVocabularyError.message}`
+      );
+      setImportingVocabulary(false);
+      return;
+    }
+
+    const nextSortOrders =
+      new Map<string, number>();
+
+    for (const sentence of chapterSentences) {
+      const existingForSentence = (
+        existingVocabulary ?? []
+      ).filter(
+        (item) =>
+          item.sentence_id ===
+          sentence.id
+      );
+
+      const highestSortOrder =
+        existingForSentence.length === 0
+          ? 0
+          : Math.max(
+              ...existingForSentence.map(
+                (item) =>
+                  item.sort_order
+              )
+            );
+
+      nextSortOrders.set(
+        sentence.id,
+        highestSortOrder + 1
+      );
+    }
+
+    const rowsToInsert = parsedRows.map(
+      (row) => {
+        const sortOrder =
+          nextSortOrders.get(
+            row.sentenceId
+          ) ?? 1;
+
+        nextSortOrders.set(
+          row.sentenceId,
+          sortOrder + 1
+        );
+
+        return {
+          sentence_id: row.sentenceId,
+          word: row.word,
+          translation: row.translation,
+          pronunciation:
+            row.pronunciation,
+          sort_order: sortOrder,
+        };
+      }
+    );
+
+    const { error } = await supabase
+      .from("vocabulary_items")
+      .insert(rowsToInsert);
+
+    if (error) {
+      setMessage(
+        `Could not import vocabulary: ${error.message}`
+      );
+      setImportingVocabulary(false);
+      return;
+    }
+
+    setBulkVocabularyOpen(false);
+    setBulkVocabularyChapterId(null);
+    setBulkVocabularyText("");
+
+    setMessage(
+      `${rowsToInsert.length} ${
+        rowsToInsert.length === 1
+          ? "vocabulary item"
+          : "vocabulary items"
+      } imported successfully.`
+    );
+
+    setImportingVocabulary(false);
+  }
+
+  // --------------------------------------------------
   // CHAPTERS
   // --------------------------------------------------
 
   function openAddChapter() {
     clearMessage();
 
-    /*
-      Safety:
-      Don't silently convert an existing non-chapter
-      story into a mixed chapter/non-chapter story.
-    */
     if (
       chapters.length === 0 &&
       sentences.length > 0
@@ -697,10 +873,13 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
   async function createChapter() {
     if (creatingChapter) return;
 
-    const cleanTitle = newChapterTitle.trim();
+    const cleanTitle =
+      newChapterTitle.trim();
 
     if (!cleanTitle) {
-      setMessage("A chapter title is required.");
+      setMessage(
+        "A chapter title is required."
+      );
       return;
     }
 
@@ -712,7 +891,8 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
         ? 1
         : Math.max(
             ...chapters.map(
-              (chapter) => chapter.chapter_number
+              (chapter) =>
+                chapter.chapter_number
             )
           ) + 1;
 
@@ -721,7 +901,8 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
         ? 1
         : Math.max(
             ...chapters.map(
-              (chapter) => chapter.sort_order
+              (chapter) =>
+                chapter.sort_order
             )
           ) + 1;
 
@@ -729,7 +910,8 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
       .from("chapters")
       .insert({
         book_id: bookId,
-        chapter_number: nextChapterNumber,
+        chapter_number:
+          nextChapterNumber,
         title: cleanTitle,
         sort_order: nextSortOrder,
       });
@@ -754,7 +936,9 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
     setCreatingChapter(false);
   }
 
-  function startEditingChapter(chapter: Chapter) {
+  function startEditingChapter(
+    chapter: Chapter
+  ) {
     clearMessage();
 
     setEditingChapterId(chapter.id);
@@ -770,16 +954,22 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
     setEditChapterNumber("");
   }
 
-  async function saveChapter(chapter: Chapter) {
+  async function saveChapter(
+    chapter: Chapter
+  ) {
     if (savingChapter) return;
 
-    const cleanTitle = editChapterTitle.trim();
+    const cleanTitle =
+      editChapterTitle.trim();
+
     const chapterNumber = Number(
       editChapterNumber
     );
 
     if (!cleanTitle) {
-      setMessage("A chapter title is required.");
+      setMessage(
+        "A chapter title is required."
+      );
       return;
     }
 
@@ -796,10 +986,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
     setSavingChapter(true);
     clearMessage();
 
-    /*
-      We keep sort_order aligned with chapter_number.
-      This makes chapter reading order predictable.
-    */
     const { error } = await supabase
       .from("chapters")
       .update({
@@ -841,13 +1027,17 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
     setSavingChapter(false);
   }
 
-  async function deleteChapter(chapter: Chapter) {
+  async function deleteChapter(
+    chapter: Chapter
+  ) {
     if (deletingChapterId) return;
 
-    const chapterSentences = sentences.filter(
-      (sentence) =>
-        sentence.chapter_id === chapter.id
-    );
+    const chapterSentences =
+      sentences.filter(
+        (sentence) =>
+          sentence.chapter_id ===
+          chapter.id
+      );
 
     let confirmed = false;
 
@@ -920,7 +1110,9 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
   // SENTENCE CARD
   // --------------------------------------------------
 
-  function renderSentence(sentence: Sentence) {
+  function renderSentence(
+    sentence: Sentence
+  ) {
     const isEditing =
       editingSentenceId === sentence.id;
 
@@ -958,14 +1150,18 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                 <EditorField
                   label="Pronunciation"
                   value={editPronunciation}
-                  onChange={setEditPronunciation}
+                  onChange={
+                    setEditPronunciation
+                  }
                   rows={2}
                 />
 
                 <div className="flex justify-end gap-2 border-t border-neutral-200 pt-4">
                   <button
                     type="button"
-                    onClick={cancelEditingSentence}
+                    onClick={
+                      cancelEditingSentence
+                    }
                     disabled={savingSentence}
                     className="rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold transition hover:bg-neutral-50 disabled:opacity-50"
                   >
@@ -1008,9 +1204,13 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                         )
                       }
                       disabled={
-                        editingSentenceId !== null ||
+                        editingSentenceId !==
+                          null ||
                         addingSentence ||
-                        deletingSentenceId !== null
+                        deletingSentenceId !==
+                          null ||
+                        bulkImportOpen ||
+                        bulkVocabularyOpen
                       }
                       className="rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold transition hover:bg-neutral-50 disabled:opacity-40"
                     >
@@ -1020,12 +1220,18 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                     <button
                       type="button"
                       onClick={() =>
-                        deleteSentence(sentence)
+                        deleteSentence(
+                          sentence
+                        )
                       }
                       disabled={
-                        editingSentenceId !== null ||
+                        editingSentenceId !==
+                          null ||
                         addingSentence ||
-                        deletingSentenceId !== null
+                        deletingSentenceId !==
+                          null ||
+                        bulkImportOpen ||
+                        bulkVocabularyOpen
                       }
                       className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-40"
                     >
@@ -1042,7 +1248,9 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                   </p>
 
                   <p className="mt-1 text-base font-medium leading-7">
-                    {sentence.translated_text}
+                    {
+                      sentence.translated_text
+                    }
                   </p>
                 </div>
 
@@ -1053,13 +1261,16 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                     </p>
 
                     <p className="mt-1 text-sm leading-6 text-neutral-500">
-                      {sentence.pronunciation}
+                      {
+                        sentence.pronunciation
+                      }
                     </p>
                   </div>
                 )}
+
                 <SentenceVocabularyEditor
-  sentenceId={sentence.id}
-/>
+                  sentenceId={sentence.id}
+                />
               </>
             )}
           </div>
@@ -1103,6 +1314,7 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
   return (
     <section className="rounded-3xl border border-black/5 bg-white p-7 shadow-sm">
       {/* HEADER */}
+
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-100 pb-6">
         <div>
           <h2 className="text-lg font-semibold">
@@ -1161,14 +1373,34 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
       </div>
 
       {/* MESSAGE */}
+
       {message && (
         <div
           className={`mt-5 rounded-xl px-4 py-3 text-sm font-medium ${
-            message.startsWith("Could not") ||
+            message.startsWith(
+              "Could not"
+            ) ||
             message.includes(
               "could not be"
             ) ||
-            message.includes("required")
+            message.includes(
+              "required"
+            ) ||
+            message.includes(
+              "invalid"
+            ) ||
+            message.includes(
+              "needs both"
+            ) ||
+            message.startsWith(
+              "Paste"
+            ) ||
+            message.includes(
+              "only has"
+            ) ||
+            message.includes(
+              "does not contain"
+            )
               ? "bg-red-50 text-red-700"
               : "bg-green-50 text-green-700"
           }`}
@@ -1178,6 +1410,7 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
       )}
 
       {/* ADD CHAPTER */}
+
       {addingChapter && (
         <div className="mt-6 rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5">
           <h3 className="font-semibold">
@@ -1239,7 +1472,215 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
         </div>
       )}
 
+      {/* BULK SENTENCE IMPORT */}
+
+      {bulkImportOpen && (
+        <div className="mt-6 rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h3 className="font-semibold">
+                Bulk import sentences
+              </h3>
+
+              <p className="mt-1 text-sm text-neutral-500">
+                {`Importing into ${
+                  chapters.find(
+                    (chapter) =>
+                      chapter.id ===
+                      bulkImportChapterId
+                  )?.title ?? "chapter"
+                }.`}
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-white px-3 py-2 text-xs text-neutral-500 shadow-sm">
+              English | Russian |
+              Pronunciation
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              Sentences
+            </label>
+
+            <textarea
+              value={bulkImportText}
+              onChange={(event) =>
+                setBulkImportText(
+                  event.target.value
+                )
+              }
+              rows={12}
+              placeholder={`I was nervous, but I was not mad. | Я нервничал, но я не был сумасшедшим. | ya nerv-nee-chal...
+I loved the old man. | Я любил старика. | ya lyu-beel...
+But I hated his pale blue eye. | Но я ненавидел его бледно-голубой глаз. | no ya...`}
+              className="w-full resize-y rounded-xl border border-neutral-200 bg-white px-4 py-3 font-mono text-sm leading-7 outline-none transition focus:border-neutral-400"
+            />
+
+            <p className="mt-2 text-xs leading-5 text-neutral-400">
+              One sentence per line.
+              Separate English, Russian and
+              pronunciation with |.
+              Pronunciation is optional.
+              Blank lines are ignored.
+            </p>
+          </div>
+
+          <div className="mt-5 flex items-center justify-between gap-4 border-t border-neutral-200 pt-5">
+            <p className="text-sm text-neutral-500">
+              {
+                bulkImportText
+                  .split("\n")
+                  .map((line) =>
+                    line.trim()
+                  )
+                  .filter(Boolean).length
+              }{" "}
+              lines ready
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={
+                  cancelBulkImport
+                }
+                disabled={
+                  importingSentences
+                }
+                className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold transition hover:bg-neutral-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  importBulkSentences
+                }
+                disabled={
+                  importingSentences ||
+                  !bulkImportText.trim()
+                }
+                className="rounded-xl bg-[#181818] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-50"
+              >
+                {importingSentences
+                  ? "Importing..."
+                  : "Import Sentences"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULK VOCABULARY IMPORT */}
+
+      {bulkVocabularyOpen && (
+        <div className="mt-6 rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h3 className="font-semibold">
+                Bulk import vocabulary
+              </h3>
+
+              <p className="mt-1 text-sm text-neutral-500">
+                {`Importing into ${
+                  chapters.find(
+                    (chapter) =>
+                      chapter.id ===
+                      bulkVocabularyChapterId
+                  )?.title ?? "chapter"
+                }.`}
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-white px-3 py-2 text-xs text-neutral-500 shadow-sm">
+              Sentence # | Russian |
+              English | Pronunciation
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              Vocabulary
+            </label>
+
+            <textarea
+              value={
+                bulkVocabularyText
+              }
+              onChange={(event) =>
+                setBulkVocabularyText(
+                  event.target.value
+                )
+              }
+              rows={12}
+              placeholder={`1 | нервничал | was nervous | nerv-nee-CHAL
+1 | сумасшедшим | mad / insane | soo-ma-SHED-sheem
+2 | чувства | senses / feelings | CHOOST-va
+2 | сильнее | stronger | SEEL-nee-ye`}
+              className="w-full resize-y rounded-xl border border-neutral-200 bg-white px-4 py-3 font-mono text-sm leading-7 outline-none transition focus:border-neutral-400"
+            />
+
+            <p className="mt-2 text-xs leading-5 text-neutral-400">
+              The first number is the
+              sentence number within this
+              chapter. Pronunciation is
+              optional. Blank lines are
+              ignored.
+            </p>
+          </div>
+
+          <div className="mt-5 flex items-center justify-between gap-4 border-t border-neutral-200 pt-5">
+            <p className="text-sm text-neutral-500">
+              {
+                bulkVocabularyText
+                  .split("\n")
+                  .map((line) =>
+                    line.trim()
+                  )
+                  .filter(Boolean).length
+              }{" "}
+              lines ready
+            </p>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={
+                  cancelBulkVocabularyImport
+                }
+                disabled={
+                  importingVocabulary
+                }
+                className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold transition hover:bg-neutral-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  importBulkVocabulary
+                }
+                disabled={
+                  importingVocabulary ||
+                  !bulkVocabularyText.trim()
+                }
+                className="rounded-xl bg-[#181818] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-50"
+              >
+                {importingVocabulary
+                  ? "Importing..."
+                  : "Import Vocabulary"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ADD SENTENCE */}
+
       {addingSentence && (
         <div className="mt-6 rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5">
           <h3 className="font-semibold">
@@ -1279,7 +1720,9 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
             <EditorField
               label="Pronunciation"
               value={newPronunciation}
-              onChange={setNewPronunciation}
+              onChange={
+                setNewPronunciation
+              }
               rows={2}
               placeholder="Enter pronunciation..."
             />
@@ -1288,8 +1731,12 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
           <div className="mt-5 flex justify-end gap-2 border-t border-neutral-200 pt-5">
             <button
               type="button"
-              onClick={cancelAddSentence}
-              disabled={creatingSentence}
+              onClick={
+                cancelAddSentence
+              }
+              disabled={
+                creatingSentence
+              }
               className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold transition hover:bg-neutral-50 disabled:opacity-50"
             >
               Cancel
@@ -1298,7 +1745,9 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
             <button
               type="button"
               onClick={createSentence}
-              disabled={creatingSentence}
+              disabled={
+                creatingSentence
+              }
               className="rounded-xl bg-[#181818] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-50"
             >
               {creatingSentence
@@ -1309,7 +1758,8 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
         </div>
       )}
 
-      {/* EMPTY STORY */}
+      {/* EMPTY / STORY CONTENT */}
+
       {sentences.length === 0 &&
       chapters.length === 0 ? (
         <div className="py-14 text-center">
@@ -1318,26 +1768,33 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
           </h3>
 
           <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-neutral-500">
-            Add individual sentences or create the
-            first chapter.
+            Add individual sentences or
+            create the first chapter.
           </p>
         </div>
       ) : chapters.length > 0 ? (
-        /* CHAPTERED STORY */
         <div className="mt-8 space-y-10">
           {chapters.map((chapter) => {
             const chapterSentences =
-              sentences.filter(
-                (sentence) =>
-                  sentence.chapter_id ===
-                  chapter.id
-              );
+              sentences
+                .filter(
+                  (sentence) =>
+                    sentence.chapter_id ===
+                    chapter.id
+                )
+                .sort(
+                  (a, b) =>
+                    a.position -
+                    b.position
+                );
 
             const isEditingChapter =
-              editingChapterId === chapter.id;
+              editingChapterId ===
+              chapter.id;
 
             const isDeletingChapter =
-              deletingChapterId === chapter.id;
+              deletingChapterId ===
+              chapter.id;
 
             return (
               <div
@@ -1363,9 +1820,12 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                           value={
                             editChapterNumber
                           }
-                          onChange={(event) =>
+                          onChange={(
+                            event
+                          ) =>
                             setEditChapterNumber(
-                              event.target.value
+                              event.target
+                                .value
                             )
                           }
                           className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-neutral-400"
@@ -1382,9 +1842,12 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                           value={
                             editChapterTitle
                           }
-                          onChange={(event) =>
+                          onChange={(
+                            event
+                          ) =>
                             setEditChapterTitle(
-                              event.target.value
+                              event.target
+                                .value
                             )
                           }
                           className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-neutral-400"
@@ -1398,7 +1861,9 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                         onClick={
                           cancelEditingChapter
                         }
-                        disabled={savingChapter}
+                        disabled={
+                          savingChapter
+                        }
                         className="rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-neutral-50 disabled:opacity-50"
                       >
                         Cancel
@@ -1407,9 +1872,13 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                       <button
                         type="button"
                         onClick={() =>
-                          saveChapter(chapter)
+                          saveChapter(
+                            chapter
+                          )
                         }
-                        disabled={savingChapter}
+                        disabled={
+                          savingChapter
+                        }
                         className="rounded-xl bg-[#181818] px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50"
                       >
                         {savingChapter
@@ -1423,7 +1892,9 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-400">
                         Chapter{" "}
-                        {chapter.chapter_number}
+                        {
+                          chapter.chapter_number
+                        }
                       </p>
 
                       <h3 className="mt-1 text-lg font-semibold">
@@ -1431,7 +1902,9 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                       </h3>
 
                       <p className="mt-1 text-xs text-neutral-400">
-                        {chapterSentences.length}{" "}
+                        {
+                          chapterSentences.length
+                        }{" "}
                         {chapterSentences.length ===
                         1
                           ? "sentence"
@@ -1439,26 +1912,55 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                       </p>
                     </div>
 
-                                        <button
-                      type="button"
-                      onClick={() =>
-                        openBulkImport(
-                          chapter.id
-                        )
-                      }
-                      disabled={
-  addingSentence ||
-  bulkImportOpen ||
-  editingSentenceId !== null ||
-  editingChapterId !== null ||
-  importingSentences
-}
-                      className="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-semibold transition hover:bg-neutral-50 disabled:opacity-40"
-                    >
-                      Bulk Import
-                    </button>
-
                     <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openBulkImport(
+                            chapter.id
+                          )
+                        }
+                        disabled={
+                          addingSentence ||
+                          bulkImportOpen ||
+                          bulkVocabularyOpen ||
+                          editingSentenceId !==
+                            null ||
+                          editingChapterId !==
+                            null ||
+                          importingSentences ||
+                          importingVocabulary
+                        }
+                        className="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-semibold transition hover:bg-neutral-50 disabled:opacity-40"
+                      >
+                        Bulk Sentences
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openBulkVocabularyImport(
+                            chapter.id
+                          )
+                        }
+                        disabled={
+                          addingSentence ||
+                          bulkImportOpen ||
+                          bulkVocabularyOpen ||
+                          editingSentenceId !==
+                            null ||
+                          editingChapterId !==
+                            null ||
+                          importingSentences ||
+                          importingVocabulary ||
+                          chapterSentences.length ===
+                            0
+                        }
+                        className="rounded-lg border border-neutral-200 px-3 py-2 text-xs font-semibold transition hover:bg-neutral-50 disabled:opacity-40"
+                      >
+                        Bulk Vocabulary
+                      </button>
+
                       <button
                         type="button"
                         onClick={() =>
@@ -1468,6 +1970,8 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                         }
                         disabled={
                           addingSentence ||
+                          bulkImportOpen ||
+                          bulkVocabularyOpen ||
                           editingSentenceId !==
                             null ||
                           editingChapterId !==
@@ -1487,6 +1991,8 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                         }
                         disabled={
                           addingSentence ||
+                          bulkImportOpen ||
+                          bulkVocabularyOpen ||
                           editingSentenceId !==
                             null ||
                           editingChapterId !==
@@ -1500,11 +2006,15 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                       <button
                         type="button"
                         onClick={() =>
-                          deleteChapter(chapter)
+                          deleteChapter(
+                            chapter
+                          )
                         }
                         disabled={
                           deletingChapterId !==
-                          null
+                            null ||
+                          bulkImportOpen ||
+                          bulkVocabularyOpen
                         }
                         className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-40"
                       >
@@ -1516,10 +2026,12 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                   </div>
                 )}
 
-                {chapterSentences.length === 0 ? (
+                {chapterSentences.length ===
+                0 ? (
                   <div className="rounded-2xl border border-dashed border-neutral-200 p-6 text-center">
                     <p className="text-sm text-neutral-400">
-                      No sentences in this chapter.
+                      No sentences in this
+                      chapter.
                     </p>
                   </div>
                 ) : (
@@ -1534,9 +2046,10 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
           })}
         </div>
       ) : (
-        /* NON-CHAPTER STORY */
         <div className="mt-7 space-y-3">
-          {sentences.map(renderSentence)}
+          {sentences.map(
+            renderSentence
+          )}
         </div>
       )}
     </section>
