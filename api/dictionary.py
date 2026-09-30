@@ -176,10 +176,7 @@ class handler(BaseHTTPRequestHandler):
             )
 
 
-            dictionary_entry =
-                extract_dictionary_entry(
-                    result
-                )
+            dictionary_entry = extract_dictionary_entry(result)
 
 
             if dictionary_entry is None:
