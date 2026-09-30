@@ -56,56 +56,146 @@ def extract_dictionary_entry(data):
     if not entries:
         return None
 
+    candidates = []
+
     for entry in entries:
+
+        sounds = entry.get("sounds", [])
+
+        pronunciation = None
+
+        for sound in sounds:
+
+            ipa = sound.get("ipa")
+
+            if ipa:
+                pronunciation = ipa
+                break
 
         senses = entry.get("senses", [])
 
         for sense in senses:
 
-            tags = sense.get("tags", [])
+            tags = set(
+                sense.get("tags", [])
+            )
 
-            if any(
-                tag in tags
-                for tag in [
-                    "slang",
-                    "rare",
-                    "obsolete",
-                    "archaic"
-                ]
+            # Avoid senses that are unlikely
+            # to be useful to a beginner.
+            excluded_tags = {
+                "slang",
+                "rare",
+                "obsolete",
+                "archaic",
+                "vulgar",
+                "offensive",
+                "derogatory"
+            }
+
+            if tags.intersection(
+                excluded_tags
             ):
                 continue
 
-            glosses = sense.get("glosses", [])
+            glosses = sense.get(
+                "glosses",
+                []
+            )
 
-            if not glosses:
-                continue
+            for gloss in glosses:
 
-            english = glosses[0].strip()
+                if not isinstance(
+                    gloss,
+                    str
+                ):
+                    continue
 
-            if not english:
-                continue
+                english = gloss.strip()
 
-            pronunciation = None
+                if not english:
+                    continue
 
-            sounds = entry.get("sounds", [])
+                # Ignore extremely long dictionary
+                # explanations. We want useful
+                # learner definitions.
+                if len(english) > 140:
+                    continue
 
-            for sound in sounds:
+                # Ignore definitions that are mostly
+                # grammatical/technical metadata.
+                lower = english.lower()
 
-                ipa = sound.get("ipa")
+                technical_terms = [
+                    "transitive",
+                    "intransitive",
+                    "imperfective",
+                    "perfective",
+                    "genitive",
+                    "dative",
+                    "instrumental",
+                    "prepositional",
+                    "nominative",
+                    "accusative",
+                    "conjugation",
+                    "declension"
+                ]
 
-                if ipa:
-                    pronunciation = ipa
-                    break
+                technical_count = sum(
+                    term in lower
+                    for term in technical_terms
+                )
 
-            return {
-                "word": data.get("word"),
-                "english": english,
-                "pronunciation": pronunciation
-            }
+                if technical_count >= 2:
+                    continue
 
-    return None
+                # Prefer short, simple definitions.
+                score = 100
 
+                if len(english) <= 30:
+                    score += 30
 
+                elif len(english) <= 60:
+                    score += 15
+
+                if "," in english:
+                    score += 5
+
+                if "(" in english:
+                    score -= 10
+
+                if ";" in english:
+                    score -= 5
+
+                candidates.append(
+                    {
+                        "english": english,
+                        "pronunciation":
+                            pronunciation,
+                        "score": score
+                    }
+                )
+
+    if not candidates:
+        return None
+
+    candidates.sort(
+        key=lambda item:
+            item["score"],
+        reverse=True
+    )
+
+    best = candidates[0]
+
+    return {
+        "word":
+            data.get("word"),
+
+        "english":
+            best["english"],
+
+        "pronunciation":
+            best["pronunciation"]
+    }
 # ---------------------------------------------------------
 # Supabase helpers
 # ---------------------------------------------------------
