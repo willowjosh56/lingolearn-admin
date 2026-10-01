@@ -1,4 +1,5 @@
 from http.server import BaseHTTPRequestHandler
+
 import json
 import re
 
@@ -45,7 +46,16 @@ def clean_word(value, language):
     elif language == "fr":
 
         value = re.sub(
-            r"^[^a-zàâäæçéèêëîïôœùûüÿ-]+|[^a-zàâäæçéèêëîïôœùûüÿ-]+$",
+            r"^[^a-zàâäæçéèêëîïôœùûüÿ-]+|[^a-zàâäæçéèêëîïôœùüÿ-]+$",
+            "",
+            value,
+            flags=re.IGNORECASE,
+        )
+
+    elif language == "de":
+
+        value = re.sub(
+            r"^[^a-zäöüß-]+|[^a-zäöüß-]+$",
             "",
             value,
             flags=re.IGNORECASE,
@@ -63,6 +73,7 @@ def lemmatize_russian(word):
     parses = russian_morph.parse(word)
 
     if not parses:
+
         return {
             "word": word,
             "lemma": None,
@@ -174,6 +185,39 @@ def lemmatize_french(word):
 
 
 # ---------------------------------------------------------
+# German Lemmatizer
+# ---------------------------------------------------------
+
+def lemmatize_german(word):
+
+    lemma = simplemma.lemmatize(
+        word,
+        lang="de",
+    )
+
+    if not lemma:
+        lemma = None
+
+    candidates = []
+
+    if lemma:
+
+        candidates.append(
+            {
+                "lemma": lemma,
+                "score": 1.0,
+                "tag": "simplemma",
+            }
+        )
+
+    return {
+        "word": word,
+        "lemma": lemma,
+        "candidates": candidates,
+    }
+
+
+# ---------------------------------------------------------
 # Request Handler
 # ---------------------------------------------------------
 
@@ -198,6 +242,7 @@ class handler(BaseHTTPRequestHandler):
                 body.decode("utf-8")
             )
 
+
             # -------------------------------------------------
             # Language
             # -------------------------------------------------
@@ -215,13 +260,20 @@ class handler(BaseHTTPRequestHandler):
             # Accept full language names too.
 
             if language == "russian":
+
                 language = "ru"
 
             elif language == "spanish":
+
                 language = "es"
 
             elif language == "french":
+
                 language = "fr"
+
+            elif language == "german":
+
+                language = "de"
 
 
             # -------------------------------------------------
@@ -232,16 +284,19 @@ class handler(BaseHTTPRequestHandler):
                 "ru",
                 "es",
                 "fr",
+                "de",
             }:
 
                 self.send_json(
                     {
                         "error":
                             "Unsupported language.",
+
                         "supportedLanguages": [
                             "ru",
                             "es",
                             "fr",
+                            "de",
                         ],
                     },
                     400,
@@ -277,10 +332,16 @@ class handler(BaseHTTPRequestHandler):
                         "A Spanish word is required."
                     )
 
-                else:
+                elif language == "fr":
 
                     message = (
                         "A French word is required."
+                    )
+
+                else:
+
+                    message = (
+                        "A German word is required."
                     )
 
 
@@ -351,6 +412,25 @@ class handler(BaseHTTPRequestHandler):
                 return
 
 
+            # -------------------------------------------------
+            # German
+            # -------------------------------------------------
+
+            if language == "de":
+
+                result = lemmatize_german(
+                    word
+                )
+
+                result["language"] = "de"
+
+                self.send_json(
+                    result
+                )
+
+                return
+
+
         except Exception as error:
 
             self.send_json(
@@ -370,12 +450,15 @@ class handler(BaseHTTPRequestHandler):
         self.send_json(
             {
                 "status": "ok",
+
                 "service":
                     "Multilingual lemmatizer",
+
                 "languages": [
                     "ru",
                     "es",
                     "fr",
+                    "de",
                 ],
             }
         )
