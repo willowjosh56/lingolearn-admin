@@ -42,6 +42,15 @@ def clean_word(value, language):
             flags=re.IGNORECASE,
         )
 
+    elif language == "fr":
+
+        value = re.sub(
+            r"^[^a-zàâäæçéèêëîïôœùûüÿ-]+|[^a-zàâäæçéèêëîïôœùûüÿ-]+$",
+            "",
+            value,
+            flags=re.IGNORECASE,
+        )
+
     return value
 
 
@@ -132,6 +141,39 @@ def lemmatize_spanish(word):
 
 
 # ---------------------------------------------------------
+# French Lemmatizer
+# ---------------------------------------------------------
+
+def lemmatize_french(word):
+
+    lemma = simplemma.lemmatize(
+        word,
+        lang="fr",
+    )
+
+    if not lemma:
+        lemma = None
+
+    candidates = []
+
+    if lemma:
+
+        candidates.append(
+            {
+                "lemma": lemma,
+                "score": 1.0,
+                "tag": "simplemma",
+            }
+        )
+
+    return {
+        "word": word,
+        "lemma": lemma,
+        "candidates": candidates,
+    }
+
+
+# ---------------------------------------------------------
 # Request Handler
 # ---------------------------------------------------------
 
@@ -178,6 +220,9 @@ class handler(BaseHTTPRequestHandler):
             elif language == "spanish":
                 language = "es"
 
+            elif language == "french":
+                language = "fr"
+
 
             # -------------------------------------------------
             # Validate language
@@ -186,6 +231,7 @@ class handler(BaseHTTPRequestHandler):
             if language not in {
                 "ru",
                 "es",
+                "fr",
             }:
 
                 self.send_json(
@@ -195,6 +241,7 @@ class handler(BaseHTTPRequestHandler):
                         "supportedLanguages": [
                             "ru",
                             "es",
+                            "fr",
                         ],
                     },
                     400,
@@ -218,15 +265,28 @@ class handler(BaseHTTPRequestHandler):
 
             if not word:
 
+                if language == "ru":
+
+                    message = (
+                        "A Russian word is required."
+                    )
+
+                elif language == "es":
+
+                    message = (
+                        "A Spanish word is required."
+                    )
+
+                else:
+
+                    message = (
+                        "A French word is required."
+                    )
+
+
                 self.send_json(
                     {
-                        "error":
-                            (
-                                "A Russian word is required."
-                                if language == "ru"
-                                else
-                                "A Spanish word is required."
-                            )
+                        "error": message
                     },
                     400,
                 )
@@ -244,9 +304,7 @@ class handler(BaseHTTPRequestHandler):
                     word
                 )
 
-
                 result["language"] = "ru"
-
 
                 self.send_json(
                     result
@@ -265,9 +323,26 @@ class handler(BaseHTTPRequestHandler):
                     word
                 )
 
-
                 result["language"] = "es"
 
+                self.send_json(
+                    result
+                )
+
+                return
+
+
+            # -------------------------------------------------
+            # French
+            # -------------------------------------------------
+
+            if language == "fr":
+
+                result = lemmatize_french(
+                    word
+                )
+
+                result["language"] = "fr"
 
                 self.send_json(
                     result
@@ -300,6 +375,7 @@ class handler(BaseHTTPRequestHandler):
                 "languages": [
                     "ru",
                     "es",
+                    "fr",
                 ],
             }
         )
