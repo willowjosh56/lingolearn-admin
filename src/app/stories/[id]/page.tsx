@@ -36,7 +36,7 @@ type Category =
 
   | "food";
 
-type LearningLanguage = "ru" | "es";
+type LearningLanguage = "ru" | "es" | "fr";
 
 export default function StoryEditorPage() {
 
@@ -1361,6 +1361,7 @@ export default function StoryEditorPage() {
                     >
                       <option value="ru">Russian</option>
                       <option value="es">Spanish</option>
+                      <option value="fr">French</option>
                     </select>
                   </div>
 
