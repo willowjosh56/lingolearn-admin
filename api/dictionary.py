@@ -14,6 +14,7 @@ WIKTAPI_BASE = "https://api.wiktapi.dev/v1/en/word/"
 # ---------------------------------------------------------
 
 def fetch_wiktapi(word, language):
+
     encoded_word = urllib.parse.quote(word)
 
     url = (
@@ -37,6 +38,7 @@ def fetch_wiktapi(word, language):
     ) as response:
 
         if response.status != 200:
+
             raise RuntimeError(
                 f"WiktAPI returned HTTP {response.status}"
             )
@@ -52,7 +54,10 @@ def fetch_wiktapi(word, language):
 
 def extract_dictionary_entry(data):
 
-    entries = data.get("entries", [])
+    entries = data.get(
+        "entries",
+        []
+    )
 
     if not entries:
         return None
@@ -61,7 +66,10 @@ def extract_dictionary_entry(data):
 
     for entry in entries:
 
-        sounds = entry.get("sounds", [])
+        sounds = entry.get(
+            "sounds",
+            []
+        )
 
         pronunciation = None
 
@@ -70,21 +78,26 @@ def extract_dictionary_entry(data):
             ipa = sound.get("ipa")
 
             if ipa:
+
                 pronunciation = ipa
+
                 break
 
 
-        senses = entry.get("senses", [])
+        senses = entry.get(
+            "senses",
+            []
+        )
 
         for sense in senses:
 
             tags = set(
-                sense.get("tags", [])
+                sense.get(
+                    "tags",
+                    []
+                )
             )
 
-
-            # Avoid senses that are unlikely
-            # to be useful to a beginner.
 
             excluded_tags = {
                 "slang",
@@ -96,9 +109,11 @@ def extract_dictionary_entry(data):
                 "derogatory"
             }
 
+
             if tags.intersection(
                 excluded_tags
             ):
+
                 continue
 
 
@@ -114,39 +129,50 @@ def extract_dictionary_entry(data):
                     gloss,
                     str
                 ):
+
                     continue
 
 
                 english = gloss.strip()
 
+
                 if not english:
+
                     continue
 
-
-                # Ignore extremely long dictionary
-                # explanations.
 
                 if len(english) > 140:
+
                     continue
 
-
-                # Ignore definitions that are mostly
-                # grammatical/technical metadata.
 
                 lower = english.lower()
 
+
                 technical_terms = [
+
                     "transitive",
+
                     "intransitive",
+
                     "imperfective",
+
                     "perfective",
+
                     "genitive",
+
                     "dative",
+
                     "instrumental",
+
                     "prepositional",
+
                     "nominative",
+
                     "accusative",
+
                     "conjugation",
+
                     "declension"
                 ]
 
@@ -158,44 +184,53 @@ def extract_dictionary_entry(data):
 
 
                 if technical_count >= 2:
+
                     continue
 
-
-                # Prefer short, simple definitions.
 
                 score = 100
 
 
                 if len(english) <= 30:
+
                     score += 30
 
                 elif len(english) <= 60:
+
                     score += 15
 
 
                 if "," in english:
+
                     score += 5
 
 
                 if "(" in english:
+
                     score -= 10
 
 
                 if ";" in english:
+
                     score -= 5
 
 
                 candidates.append(
                     {
-                        "english": english,
+                        "english":
+                            english,
+
                         "pronunciation":
                             pronunciation,
-                        "score": score
+
+                        "score":
+                            score
                     }
                 )
 
 
     if not candidates:
+
         return None
 
 
@@ -210,6 +245,7 @@ def extract_dictionary_entry(data):
 
 
     return {
+
         "word":
             data.get("word"),
 
@@ -232,6 +268,7 @@ def get_supabase_url():
     )
 
     if not value:
+
         raise RuntimeError(
             "SUPABASE_URL is not configured"
         )
@@ -246,6 +283,7 @@ def get_supabase_key():
     )
 
     if not value:
+
         raise RuntimeError(
             "SUPABASE_SERVICE_ROLE_KEY is not configured"
         )
@@ -261,9 +299,13 @@ def supabase_request(
 ):
 
     headers = {
-        "apikey": get_supabase_key(),
+
+        "apikey":
+            get_supabase_key(),
+
         "Authorization":
-            "Bearer " + get_supabase_key()
+            "Bearer "
+            + get_supabase_key()
     }
 
 
@@ -291,9 +333,13 @@ def supabase_request(
 
 
     request = urllib.request.Request(
+
         endpoint,
+
         data=data,
+
         method=method,
+
         headers=headers
     )
 
@@ -311,6 +357,7 @@ def supabase_request(
 
 
             if not raw:
+
                 return []
 
 
@@ -347,19 +394,28 @@ def find_existing_dictionary_word(
 
 
     endpoint = (
+
         url
+
         + "/rest/v1/dictionary_words"
-        + "?select=id,word,tap_text,english,pronunciation"
+
+        + "?select="
+          "id,word,tap_text,english,pronunciation"
+
         + "&learning_language=eq."
+
         + urllib.parse.quote(
             language,
             safe=""
         )
+
         + "&tap_text=eq."
+
         + urllib.parse.quote(
             word,
             safe=""
         )
+
         + "&limit=1"
     )
 
@@ -371,6 +427,7 @@ def find_existing_dictionary_word(
 
 
     if not rows:
+
         return None
 
 
@@ -388,13 +445,15 @@ def save_dictionary_word(
     language
 ):
 
-    existing = find_existing_dictionary_word(
-        word,
-        language
-    )
+    existing =
+        find_existing_dictionary_word(
+            word,
+            language
+        )
 
 
     if existing:
+
         return existing
 
 
@@ -488,10 +547,6 @@ def save_alias(
 
     except Exception as error:
 
-        # Do not make an otherwise successful
-        # dictionary lookup fail just because
-        # an alias already exists.
-
         print(
             "Alias save warning:",
             str(error)
@@ -504,16 +559,25 @@ def save_alias(
 # HTTP handler
 # ---------------------------------------------------------
 
-class handler(BaseHTTPRequestHandler):
+class handler(
+    BaseHTTPRequestHandler
+):
 
     def do_GET(self):
 
         self.send_json({
+
             "service":
                 "Dual Language Library dictionary",
 
             "status":
-                "ok"
+                "ok",
+
+            "languages": [
+                "ru",
+                "es",
+                "fr"
+            ]
         })
 
 
@@ -566,8 +630,10 @@ class handler(BaseHTTPRequestHandler):
             ):
 
                 self.send_json({
+
                     "error":
                         "Language must be a string."
+
                 }, 400)
 
                 return
@@ -580,17 +646,27 @@ class handler(BaseHTTPRequestHandler):
             )
 
 
-            # Only languages currently supported
-            # by the application.
+            # -------------------------------------------------
+            # Supported languages
+            # -------------------------------------------------
 
             if language not in {
                 "ru",
-                "es"
+                "es",
+                "fr"
             }:
 
                 self.send_json({
+
                     "error":
-                        "Unsupported language."
+                        "Unsupported language.",
+
+                    "supportedLanguages": [
+                        "ru",
+                        "es",
+                        "fr"
+                    ]
+
                 }, 400)
 
                 return
@@ -606,8 +682,10 @@ class handler(BaseHTTPRequestHandler):
             ):
 
                 self.send_json({
+
                     "error":
                         "Word must be a string."
+
                 }, 400)
 
                 return
@@ -623,8 +701,10 @@ class handler(BaseHTTPRequestHandler):
             if not word:
 
                 self.send_json({
+
                     "error":
                         "A word is required."
+
                 }, 400)
 
                 return
@@ -642,8 +722,10 @@ class handler(BaseHTTPRequestHandler):
                 ):
 
                     self.send_json({
+
                         "error":
                             "Alias must be a string."
+
                     }, 400)
 
                     return
@@ -676,40 +758,56 @@ class handler(BaseHTTPRequestHandler):
             if dictionary_entry is None:
 
                 self.send_json({
-                    "word": word,
-                    "found": False,
-                    "saved": False,
-                    "entry": None,
-                    "language": language
+
+                    "word":
+                        word,
+
+                    "found":
+                        False,
+
+                    "saved":
+                        False,
+
+                    "entry":
+                        None,
+
+                    "language":
+                        language
+
                 })
 
                 return
 
 
             # -------------------------------------------------
-            # 2. Save the lemma
+            # 2. Save dictionary word
             # -------------------------------------------------
 
-            saved_row = save_dictionary_word(
+            saved_row =
+                save_dictionary_word(
 
-                word=
-                    dictionary_entry["word"],
+                    word=
+                        dictionary_entry[
+                            "word"
+                        ],
 
-                english=
-                    dictionary_entry["english"],
+                    english=
+                        dictionary_entry[
+                            "english"
+                        ],
 
-                pronunciation=
-                    dictionary_entry[
-                        "pronunciation"
-                    ],
+                    pronunciation=
+                        dictionary_entry[
+                            "pronunciation"
+                        ],
 
-                language=
-                    language
-            )
+                    language=
+                        language
+                )
 
 
             # -------------------------------------------------
-            # 3. Save the tapped form as an alias
+            # 3. Save alias
             # -------------------------------------------------
 
             if (
@@ -730,29 +828,39 @@ class handler(BaseHTTPRequestHandler):
 
 
             # -------------------------------------------------
-            # 4. Return everything
+            # 4. Return result
             # -------------------------------------------------
 
             self.send_json({
 
-                "word": word,
+                "word":
+                    word,
 
-                "found": True,
+                "found":
+                    True,
 
-                "saved": True,
+                "saved":
+                    True,
 
-                "language": language,
+                "language":
+                    language,
 
                 "entry": {
 
                     "id":
-                        saved_row.get("id"),
+                        saved_row.get(
+                            "id"
+                        ),
 
                     "word":
-                        dictionary_entry["word"],
+                        dictionary_entry[
+                            "word"
+                        ],
 
                     "english":
-                        dictionary_entry["english"],
+                        dictionary_entry[
+                            "english"
+                        ],
 
                     "pronunciation":
                         dictionary_entry[
@@ -779,6 +887,10 @@ class handler(BaseHTTPRequestHandler):
             }, 500)
 
 
+    # ---------------------------------------------------------
+    # JSON Response
+    # ---------------------------------------------------------
+
     def send_json(
         self,
         payload,
@@ -791,7 +903,9 @@ class handler(BaseHTTPRequestHandler):
         ).encode("utf-8")
 
 
-        self.send_response(status)
+        self.send_response(
+            status
+        )
 
 
         self.send_header(
@@ -809,4 +923,6 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
 
-        self.wfile.write(encoded)
+        self.wfile.write(
+            encoded
+        )
