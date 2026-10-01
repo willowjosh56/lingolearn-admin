@@ -63,11 +63,15 @@ export default function StoryContentEditor({
   const [learningLanguage, setLearningLanguage] = useState("ru");
 
   const learningLanguageLabel =
-    learningLanguage === "es"
-      ? "Spanish"
-      : learningLanguage === "ru"
-        ? "Russian"
-        : learningLanguage.toUpperCase();
+  learningLanguage === "es"
+    ? "Spanish"
+    : learningLanguage === "fr"
+      ? "French"
+      : learningLanguage === "de"
+        ? "German"
+        : learningLanguage === "ru"
+          ? "Russian"
+          : learningLanguage.toUpperCase();
 
   const [chapters, setChapters] = useState<Chapter[]>([]);
 

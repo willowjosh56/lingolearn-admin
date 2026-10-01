@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 
 type ContentType = "original" | "classic";
 
-type LearningLanguage = "ru" | "es";
+type LearningLanguage = "ru" | "es" | "fr" | "de";
 
 type Category =
   | "everyday"

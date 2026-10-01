@@ -7,7 +7,7 @@ import type { Book } from "@/lib/types";
 import Link from "next/link";
 
 
-type LearningLanguage = "ru" | "es" | "fr";
+type LearningLanguage = "ru" | "es" | "fr" | "de";
 
 type LanguageFilter =
   | "all"
@@ -29,6 +29,9 @@ function languageName(
     case "fr":
       return "French";
 
+      case "de":
+  return "German";
+
     default:
       return "Unknown";
   }
@@ -49,6 +52,9 @@ function languageShortName(
 
     case "fr":
       return "FR";
+
+      case "de":
+  return "DE";
 
     default:
       return "--";
@@ -247,12 +253,19 @@ export default function Home() {
           ).length,
 
         fr:
-          books.filter(
-            book =>
-              book.learning_language ===
-              "fr"
-          ).length
-      };
+  books.filter(
+    book =>
+      book.learning_language ===
+      "fr"
+  ).length,
+
+de:
+  books.filter(
+    book =>
+      book.learning_language ===
+      "de"
+  ).length
+};
 
     }, [books]);
 
@@ -804,6 +817,10 @@ export default function Home() {
               <option value="fr">
                 French ({languageCounts.fr})
               </option>
+
+              <option value="de">
+  German ({languageCounts.de})
+</option>
 
             </select>
 
