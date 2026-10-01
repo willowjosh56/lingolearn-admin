@@ -411,6 +411,7 @@ export default function NewStoryPage() {
                   <option value="fr">
   French
 </option>
+<option value="de">German</option>
                 </select>
 
                 <p className="mt-2 text-xs text-neutral-400">
