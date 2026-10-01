@@ -445,11 +445,10 @@ def save_dictionary_word(
     language
 ):
 
-    existing =
-        find_existing_dictionary_word(
-            word,
-            language
-        )
+    existing = find_existing_dictionary_word(
+    word,
+    language
+)
 
 
     if existing:
@@ -783,27 +782,16 @@ class handler(
             # 2. Save dictionary word
             # -------------------------------------------------
 
-            saved_row =
-                save_dictionary_word(
+            saved_row = save_dictionary_word(
 
-                    word=
-                        dictionary_entry[
-                            "word"
-                        ],
+    word=dictionary_entry["word"],
 
-                    english=
-                        dictionary_entry[
-                            "english"
-                        ],
+    english=dictionary_entry["english"],
 
-                    pronunciation=
-                        dictionary_entry[
-                            "pronunciation"
-                        ],
+    pronunciation=dictionary_entry["pronunciation"],
 
-                    language=
-                        language
-                )
+    language=language
+)
 
 
             # -------------------------------------------------
