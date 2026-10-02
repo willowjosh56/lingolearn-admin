@@ -31,7 +31,6 @@ export type Book = {
     | "plus";
 
   original_author: string | null;
-  original_author: string | null;
   original_publication_year: number | null;
   source_title: string | null;
   source_url: string | null;
