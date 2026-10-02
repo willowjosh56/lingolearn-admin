@@ -1345,17 +1345,12 @@ export default function StoryContentEditor({
 
 
     type ParsedVocabulary = {
-
-      sentenceId: string;
-
-      word: string;
-
-      translation: string;
-
-      pronunciation: string;
-
-    };
-
+  sentenceId: string;
+  word: string;
+  tapText: string;
+  translation: string;
+  pronunciation: string;
+};
 
 
     const parsedRows: ParsedVocabulary[] = [];
@@ -1380,7 +1375,7 @@ export default function StoryContentEditor({
 
 
 
-      if (parts.length < 3) {
+      if (parts.length < 4) {
 
         setMessage(
 
@@ -1388,7 +1383,7 @@ export default function StoryContentEditor({
 
             index + 1
 
-          } is invalid. Use: Sentence # | ${learningLanguageLabel} | English | Pronunciation`
+          } is invalid. Use: Sentence # | ${learningLanguageLabel} base word | Text in sentence | English | Pronunciation`
 
         );
 
@@ -1399,20 +1394,14 @@ export default function StoryContentEditor({
 
 
       const sentenceNumber = Number(parts[0]);
+const word = parts[1];
+const tapText = parts[2];
+const translation = parts[3];
 
-      const word = parts[1];
-
-      const translation = parts[2];
-
-
-
-      const pronunciation = parts
-
-        .slice(3)
-
-        .join("|")
-
-        .trim();
+const pronunciation = parts
+  .slice(4)
+  .join("|")
+  .trim();
 
 
 
@@ -1464,7 +1453,7 @@ export default function StoryContentEditor({
 
 
 
-      if (!word || !translation) {
+      if (!word || !tapText || !translation) {
 
         setMessage(
 
@@ -1492,17 +1481,13 @@ export default function StoryContentEditor({
 
 
 
-      parsedRows.push({
-
-        sentenceId: targetSentence.id,
-
-        word,
-
-        translation,
-
-        pronunciation,
-
-      });
+     parsedRows.push({
+  sentenceId: targetSentence.id,
+  word,
+  tapText,
+  translation,
+  pronunciation,
+});
 
     }
 
@@ -1641,20 +1626,14 @@ export default function StoryContentEditor({
 
 
         return {
-
-          sentence_id: row.sentenceId,
-
-          word: row.word,
-
-          translation: row.translation,
-
-          pronunciation:
-
-            row.pronunciation,
-
-          sort_order: sortOrder,
-
-        };
+  sentence_id: row.sentenceId,
+  word: row.word,
+  tap_text: row.tapText,
+  translation: row.translation,
+  pronunciation:
+    row.pronunciation,
+  sort_order: sortOrder,
+};
 
       }
 
