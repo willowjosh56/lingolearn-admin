@@ -22,10 +22,15 @@ export type Book = {
   status: "draft" | "published";
   sort_order: number;
 
-  content_type:
+    content_type:
     | "original"
     | "classic";
 
+  access_tier:
+    | "free"
+    | "plus";
+
+  original_author: string | null;
   original_author: string | null;
   original_publication_year: number | null;
   source_title: string | null;

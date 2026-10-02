@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase";
 
 type ContentType = "original" | "classic";
 
+type AccessTier = "free" | "plus";
+
 type LearningLanguage = "ru" | "es" | "fr" | "de";
 
 type Category =
@@ -22,6 +24,9 @@ export default function NewStoryPage() {
 
   const [contentType, setContentType] =
     useState<ContentType>("original");
+
+  const [accessTier, setAccessTier] =
+    useState<AccessTier>("free");
 
   const [learningLanguage, setLearningLanguage] =
     useState<LearningLanguage>("ru");
@@ -195,6 +200,9 @@ export default function NewStoryPage() {
         content_type:
           contentType,
 
+        access_tier:
+          accessTier,
+
         original_author:
           contentType === "classic"
             ? originalAuthor.trim() ||
@@ -352,6 +360,89 @@ export default function NewStoryPage() {
             </div>
           </section>
 
+          {/* ACCESS */}
+
+          <section className="rounded-3xl border border-black/5 bg-white p-7 shadow-sm">
+            <h2 className="font-semibold">
+              Access
+            </h2>
+
+            <p className="mt-1 text-sm text-neutral-500">
+              Choose who can read this title
+              in the app.
+            </p>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setAccessTier("free")
+                }
+                className={`rounded-2xl border p-5 text-left transition ${
+                  accessTier === "free"
+                    ? "border-neutral-900 bg-neutral-900 text-white"
+                    : "border-neutral-200 hover:border-neutral-300"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold">
+                    Free
+                  </p>
+
+                  {accessTier === "free" && (
+                    <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold">
+                      Selected
+                    </span>
+                  )}
+                </div>
+
+                <p
+                  className={`mt-2 text-sm ${
+                    accessTier === "free"
+                      ? "text-neutral-300"
+                      : "text-neutral-500"
+                  }`}
+                >
+                  Available to everyone.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setAccessTier("plus")
+                }
+                className={`rounded-2xl border p-5 text-left transition ${
+                  accessTier === "plus"
+                    ? "border-neutral-900 bg-neutral-900 text-white"
+                    : "border-neutral-200 hover:border-neutral-300"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold">
+                    Plus+
+                  </p>
+
+                  {accessTier === "plus" && (
+                    <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold">
+                      Selected
+                    </span>
+                  )}
+                </div>
+
+                <p
+                  className={`mt-2 text-sm ${
+                    accessTier === "plus"
+                      ? "text-neutral-300"
+                      : "text-neutral-500"
+                  }`}
+                >
+                  Available to Plus+ members.
+                </p>
+              </button>
+            </div>
+          </section>
+
           {/* BASIC INFORMATION */}
 
           <section className="rounded-3xl border border-black/5 bg-white p-7 shadow-sm">
@@ -409,9 +500,12 @@ export default function NewStoryPage() {
                   </option>
 
                   <option value="fr">
-  French
-</option>
-<option value="de">German</option>
+                    French
+                  </option>
+
+                  <option value="de">
+                    German
+                  </option>
                 </select>
 
                 <p className="mt-2 text-xs text-neutral-400">
