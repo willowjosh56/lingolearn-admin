@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 
 import SentenceVocabularyEditor from "@/components/SentenceVocabularyEditor";
 
-
+import FullBookImporter from "@/components/FullBookImporter";
 
 type Chapter = {
 
@@ -2820,6 +2820,15 @@ const pronunciation = parts
         </div>
 
       )}
+
+      {/* FULL BOOK IMPORT */}
+
+<FullBookImporter
+  bookId={bookId}
+  existingChapterCount={chapters.length}
+  existingSentenceCount={sentences.length}
+  onImported={() => loadContent(false)}
+/>
 
 
 
