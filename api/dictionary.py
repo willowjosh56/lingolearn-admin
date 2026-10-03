@@ -75,6 +75,21 @@ def clean_word(value, language):
         )
     return value
 # ---------------------------------------------------------
+# Russian Personal Names
+# ---------------------------------------------------------
+def russian_person_name_lemma(word):
+    if not word:
+        return None
+    parses = russian_morph.parse(word)
+    if not parses:
+        return None
+    # Use only the most likely parse so an ordinary word is not treated
+    # as a name because of a low-probability alternative parse.
+    best_parse = parses[0]
+    if "Name" not in best_parse.tag:
+        return None
+    return best_parse.normal_form
+# ---------------------------------------------------------
 # Lemmatization
 # ---------------------------------------------------------
 def lemmatize_word(word, language):
@@ -591,17 +606,31 @@ class handler(
             if not lemma:
                 lemma = word
             # -------------------------------------------------
-            # 2. Look up the lemma
+            # 2. Detect Russian personal names, then look up the lemma
             # -------------------------------------------------
-            result = fetch_wiktapi(
-                lemma,
-                language,
-            )
-            dictionary_entry = (
-                extract_dictionary_entry(
-                    result
+            dictionary_entry = None
+            if language == "ru":
+                name_lemma = russian_person_name_lemma(word)
+                if name_lemma:
+                    lemma = clean_word(
+                        name_lemma,
+                        language,
+                    ) or word
+                    dictionary_entry = {
+                        "word": lemma,
+                        "english": "NAME",
+                        "pronunciation": "",
+                    }
+            if dictionary_entry is None:
+                result = fetch_wiktapi(
+                    lemma,
+                    language,
                 )
-            )
+                dictionary_entry = (
+                    extract_dictionary_entry(
+                        result
+                    )
+                )
             # -------------------------------------------------
             # Fallback to original word
             # -------------------------------------------------
