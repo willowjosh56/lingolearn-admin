@@ -1,16 +1,16 @@
 "use client";
 
-
-
 import { useEffect, useState } from "react";
 
 import { supabase } from "@/lib/supabase";
 
 import SentenceVocabularyEditor from "@/components/SentenceVocabularyEditor";
-import FullBookImporter from "@/components/FullBookImporter";
-import ChapterAdaptationImporter from "@/components/ChapterAdaptationImporter";
-import ProcessedBookImporter from "@/components/ProcessedBookImporter";
 
+import FullBookImporter from "@/components/FullBookImporter";
+
+import ChapterAdaptationImporter from "@/components/ChapterAdaptationImporter";
+
+import ProcessedBookImporter from "@/components/ProcessedBookImporter";
 
 type Chapter = {
 
@@ -26,27 +26,31 @@ type Chapter = {
 
 };
 
-
-
 type Sentence = {
-  id: string;
-  book_id: string;
-  chapter_id: string | null;
-  position: number;
-  source_text: string;
-  adapted_text: string | null;
-  translated_text: string;
-  pronunciation: string | null;
-};
 
+  id: string;
+
+  book_id: string;
+
+  chapter_id: string | null;
+
+  position: number;
+
+  source_text: string;
+
+  adapted_text: string | null;
+
+  translated_text: string;
+
+  pronunciation: string | null;
+
+};
 
 type StoryContentEditorProps = {
 
   bookId: string;
 
 };
-
-
 
 export default function StoryContentEditor({
 
@@ -57,21 +61,61 @@ export default function StoryContentEditor({
   const [learningLanguage, setLearningLanguage] = useState("ru");
 
   const learningLanguageLabel =
+
   learningLanguage === "es"
+
     ? "Spanish"
+
     : learningLanguage === "fr"
+
       ? "French"
+
       : learningLanguage === "de"
+
         ? "German"
+
         : learningLanguage === "ru"
+
           ? "Russian"
+
           : learningLanguage.toUpperCase();
 
   const [chapters, setChapters] = useState<Chapter[]>([]);
 
   const [sentences, setSentences] = useState<Sentence[]>([]);
 
+  // Chapters stay collapsed until you choose one to work on.
+  const [expandedChapterIds, setExpandedChapterIds] = useState<Set<string>>(new Set());
 
+  function toggleChapter(chapterId: string) {
+    setExpandedChapterIds((current) => {
+      const next = new Set(current);
+      if (next.has(chapterId)) {
+        next.delete(chapterId);
+      } else {
+        next.add(chapterId);
+      }
+      return next;
+    });
+  }
+
+  function expandChapter(chapterId: string | null) {
+    if (!chapterId) return;
+    setExpandedChapterIds((current) => {
+      if (current.has(chapterId)) return current;
+      const next = new Set(current);
+      next.add(chapterId);
+      return next;
+    });
+  }
+
+  function expandAllChapters() {
+    setExpandedChapterIds(new Set(chapters.map((chapter) => chapter.id)));
+  }
+
+  function collapseAllChapters() {
+    setExpandedChapterIds(new Set());
+  }
 
   const [loading, setLoading] = useState(true);
 
@@ -79,21 +123,15 @@ export default function StoryContentEditor({
 
   const [message, setMessage] = useState("");
 
-
-
   // --------------------------------------------------
 
   // SENTENCE EDITING
 
   // --------------------------------------------------
 
-
-
   const [editingSentenceId, setEditingSentenceId] =
 
     useState<string | null>(null);
-
-
 
   const [editEnglish, setEditEnglish] = useState("");
 
@@ -103,19 +141,13 @@ export default function StoryContentEditor({
 
     useState("");
 
-
-
   const [savingSentence, setSavingSentence] =
 
     useState(false);
 
-
-
   const [deletingSentenceId, setDeletingSentenceId] =
 
     useState<string | null>(null);
-
-
 
   // --------------------------------------------------
 
@@ -123,19 +155,13 @@ export default function StoryContentEditor({
 
   // --------------------------------------------------
 
-
-
   const [addingSentence, setAddingSentence] =
 
     useState(false);
 
-
-
   const [addSentenceChapterId, setAddSentenceChapterId] =
 
     useState<string | null>(null);
-
-
 
   const [newEnglish, setNewEnglish] = useState("");
 
@@ -145,13 +171,9 @@ export default function StoryContentEditor({
 
     useState("");
 
-
-
   const [creatingSentence, setCreatingSentence] =
 
     useState(false);
-
-
 
   // --------------------------------------------------
 
@@ -159,31 +181,21 @@ export default function StoryContentEditor({
 
   // --------------------------------------------------
 
-
-
   const [bulkImportOpen, setBulkImportOpen] =
 
     useState(false);
-
-
 
   const [bulkImportChapterId, setBulkImportChapterId] =
 
     useState<string | null>(null);
 
-
-
   const [bulkImportText, setBulkImportText] =
 
     useState("");
 
-
-
   const [importingSentences, setImportingSentences] =
 
     useState(false);
-
-
 
   // --------------------------------------------------
 
@@ -191,13 +203,9 @@ export default function StoryContentEditor({
 
   // --------------------------------------------------
 
-
-
   const [bulkVocabularyOpen, setBulkVocabularyOpen] =
 
     useState(false);
-
-
 
   const [
 
@@ -207,19 +215,13 @@ export default function StoryContentEditor({
 
   ] = useState<string | null>(null);
 
-
-
   const [bulkVocabularyText, setBulkVocabularyText] =
 
     useState("");
 
-
-
   const [importingVocabulary, setImportingVocabulary] =
 
     useState(false);
-
-
 
   // --------------------------------------------------
 
@@ -227,55 +229,37 @@ export default function StoryContentEditor({
 
   // --------------------------------------------------
 
-
-
   const [addingChapter, setAddingChapter] =
 
     useState(false);
-
-
 
   const [newChapterTitle, setNewChapterTitle] =
 
     useState("");
 
-
-
   const [creatingChapter, setCreatingChapter] =
 
     useState(false);
-
-
 
   const [editingChapterId, setEditingChapterId] =
 
     useState<string | null>(null);
 
-
-
   const [editChapterTitle, setEditChapterTitle] =
 
     useState("");
-
-
 
   const [editChapterNumber, setEditChapterNumber] =
 
     useState("");
 
-
-
   const [savingChapter, setSavingChapter] =
 
     useState(false);
 
-
-
   const [deletingChapterId, setDeletingChapterId] =
 
     useState<string | null>(null);
-
-
 
   // --------------------------------------------------
 
@@ -283,28 +267,33 @@ export default function StoryContentEditor({
 
   // --------------------------------------------------
 
-
-
   useEffect(() => {
 
     loadLearningLanguage();
+
     loadContent();
 
   }, [bookId]);
 
   async function loadLearningLanguage() {
+
     const { data, error } = await supabase
+
       .from("books")
+
       .select("learning_language")
+
       .eq("id", bookId)
+
       .single();
 
     if (!error && data?.learning_language) {
+
       setLearningLanguage(data.learning_language);
+
     }
+
   }
-
-
 
   async function loadContent(showLoading = true) {
 
@@ -314,11 +303,7 @@ export default function StoryContentEditor({
 
     }
 
-
-
     setError("");
-
-
 
     const [
 
@@ -344,8 +329,6 @@ export default function StoryContentEditor({
 
         .order("chapter_number", { ascending: true }),
 
-
-
       supabase
 
         .from("sentences")
@@ -362,8 +345,6 @@ export default function StoryContentEditor({
 
     ]);
 
-
-
     if (chapterError) {
 
       setError(
@@ -377,8 +358,6 @@ export default function StoryContentEditor({
       return;
 
     }
-
-
 
     if (sentenceError) {
 
@@ -394,8 +373,6 @@ export default function StoryContentEditor({
 
     }
 
-
-
     setChapters((chapterData ?? []) as Chapter[]);
 
     setSentences((sentenceData ?? []) as Sentence[]);
@@ -403,8 +380,6 @@ export default function StoryContentEditor({
     setLoading(false);
 
   }
-
-
 
   async function reorderBook() {
 
@@ -420,8 +395,6 @@ export default function StoryContentEditor({
 
     );
 
-
-
     if (error) {
 
       throw new Error(error.message);
@@ -430,15 +403,11 @@ export default function StoryContentEditor({
 
   }
 
-
-
   function clearMessage() {
 
     setMessage("");
 
   }
-
-
 
   // --------------------------------------------------
 
@@ -446,13 +415,9 @@ export default function StoryContentEditor({
 
   // --------------------------------------------------
 
-
-
   function startEditingSentence(sentence: Sentence) {
 
     clearMessage();
-
-
 
     setEditingSentenceId(sentence.id);
 
@@ -468,8 +433,6 @@ export default function StoryContentEditor({
 
   }
 
-
-
   function cancelEditingSentence() {
 
     setEditingSentenceId(null);
@@ -482,13 +445,9 @@ export default function StoryContentEditor({
 
   }
 
-
-
   async function saveSentence(sentence: Sentence) {
 
     if (savingSentence) return;
-
-
 
     const cleanEnglish = editEnglish.trim();
 
@@ -497,8 +456,6 @@ export default function StoryContentEditor({
     const cleanPronunciation =
 
       editPronunciation.trim();
-
-
 
     if (!cleanEnglish || !cleanTranslation) {
 
@@ -512,13 +469,9 @@ export default function StoryContentEditor({
 
     }
 
-
-
     setSavingSentence(true);
 
     clearMessage();
-
-
 
     const { error } = await supabase
 
@@ -536,8 +489,6 @@ export default function StoryContentEditor({
 
       .eq("id", sentence.id);
 
-
-
     if (error) {
 
       setMessage(
@@ -552,8 +503,6 @@ export default function StoryContentEditor({
 
     }
 
-
-
     setEditingSentenceId(null);
 
     setEditEnglish("");
@@ -562,11 +511,7 @@ export default function StoryContentEditor({
 
     setEditPronunciation("");
 
-
-
     await loadContent(false);
-
-
 
     setMessage(
 
@@ -574,19 +519,13 @@ export default function StoryContentEditor({
 
     );
 
-
-
     setSavingSentence(false);
 
   }
 
-
-
   async function deleteSentence(sentence: Sentence) {
 
     if (deletingSentenceId) return;
-
-
 
     const confirmed = window.confirm(
 
@@ -594,17 +533,11 @@ export default function StoryContentEditor({
 
     );
 
-
-
     if (!confirmed) return;
-
-
 
     setDeletingSentenceId(sentence.id);
 
     clearMessage();
-
-
 
     const { error } = await supabase
 
@@ -613,8 +546,6 @@ export default function StoryContentEditor({
       .delete()
 
       .eq("id", sentence.id);
-
-
 
     if (error) {
 
@@ -630,23 +561,17 @@ export default function StoryContentEditor({
 
     }
 
-
-
     try {
 
       await reorderBook();
 
       await loadContent(false);
 
-
-
       setMessage("Sentence deleted.");
 
     } catch (reorderError) {
 
       await loadContent(false);
-
-
 
       setMessage(
 
@@ -664,21 +589,15 @@ export default function StoryContentEditor({
 
     }
 
-
-
     setDeletingSentenceId(null);
 
   }
-
-
 
   // --------------------------------------------------
 
   // ADD SENTENCE
 
   // --------------------------------------------------
-
-
 
   function openAddSentence(
 
@@ -688,13 +607,10 @@ export default function StoryContentEditor({
 
     clearMessage();
 
-
-
+    expandChapter(chapterId);
     setAddingSentence(true);
 
     setAddSentenceChapterId(chapterId);
-
-
 
     setNewEnglish("");
 
@@ -703,8 +619,6 @@ export default function StoryContentEditor({
     setNewPronunciation("");
 
   }
-
-
 
   function cancelAddSentence() {
 
@@ -712,8 +626,6 @@ export default function StoryContentEditor({
 
     setAddSentenceChapterId(null);
 
-
-
     setNewEnglish("");
 
     setNewTranslation("");
@@ -722,13 +634,9 @@ export default function StoryContentEditor({
 
   }
 
-
-
   async function createSentence() {
 
     if (creatingSentence) return;
-
-
 
     const cleanEnglish = newEnglish.trim();
 
@@ -737,8 +645,6 @@ export default function StoryContentEditor({
     const cleanPronunciation =
 
       newPronunciation.trim();
-
-
 
     if (!cleanEnglish || !cleanTranslation) {
 
@@ -752,13 +658,9 @@ export default function StoryContentEditor({
 
     }
 
-
-
     setCreatingSentence(true);
 
     clearMessage();
-
-
 
     const nextTemporaryPosition =
 
@@ -775,8 +677,6 @@ export default function StoryContentEditor({
             )
 
           ) + 1;
-
-
 
     const { error } = await supabase
 
@@ -798,8 +698,6 @@ export default function StoryContentEditor({
 
       });
 
-
-
     if (error) {
 
       setMessage(
@@ -814,21 +712,15 @@ export default function StoryContentEditor({
 
     }
 
-
-
     try {
 
       await reorderBook();
 
       await loadContent(false);
 
-
-
       setAddingSentence(false);
 
       setAddSentenceChapterId(null);
-
-
 
       setNewEnglish("");
 
@@ -836,15 +728,11 @@ export default function StoryContentEditor({
 
       setNewPronunciation("");
 
-
-
       setMessage("Sentence added.");
 
     } catch (reorderError) {
 
       await loadContent(false);
-
-
 
       setMessage(
 
@@ -862,21 +750,15 @@ export default function StoryContentEditor({
 
     }
 
-
-
     setCreatingSentence(false);
 
   }
-
-
 
   // --------------------------------------------------
 
   // BULK SENTENCE IMPORT
 
   // --------------------------------------------------
-
-
 
   function openBulkImport(
 
@@ -886,15 +768,12 @@ export default function StoryContentEditor({
 
     clearMessage();
 
-
-
+    expandChapter(chapterId);
     setBulkVocabularyOpen(false);
 
     setBulkVocabularyChapterId(null);
 
     setBulkVocabularyText("");
-
-
 
     setBulkImportChapterId(chapterId);
 
@@ -903,8 +782,6 @@ export default function StoryContentEditor({
     setBulkImportOpen(true);
 
   }
-
-
 
   function cancelBulkImport() {
 
@@ -916,17 +793,11 @@ export default function StoryContentEditor({
 
   }
 
-
-
   async function importBulkSentences() {
 
     if (importingSentences) return;
 
-
-
     const cleanText = bulkImportText.trim();
-
-
 
     if (!cleanText) {
 
@@ -940,8 +811,6 @@ export default function StoryContentEditor({
 
     }
 
-
-
     const lines = cleanText
 
       .split("\n")
@@ -949,8 +818,6 @@ export default function StoryContentEditor({
       .map((line) => line.trim())
 
       .filter(Boolean);
-
-
 
     if (lines.length === 0) {
 
@@ -964,8 +831,6 @@ export default function StoryContentEditor({
 
     }
 
-
-
     const parsedRows: {
 
       source_text: string;
@@ -975,8 +840,6 @@ export default function StoryContentEditor({
       pronunciation: string;
 
     }[] = [];
-
-
 
     for (
 
@@ -990,15 +853,11 @@ export default function StoryContentEditor({
 
       const line = lines[index];
 
-
-
       const parts = line
 
         .split("|")
 
         .map((part) => part.trim());
-
-
 
       if (parts.length < 2) {
 
@@ -1016,13 +875,9 @@ export default function StoryContentEditor({
 
       }
 
-
-
       const english = parts[0];
 
       const translationText = parts[1];
-
-
 
       const pronunciation = parts
 
@@ -1031,8 +886,6 @@ export default function StoryContentEditor({
         .join("|")
 
         .trim();
-
-
 
       if (!english || !translationText) {
 
@@ -1050,8 +903,6 @@ export default function StoryContentEditor({
 
       }
 
-
-
       parsedRows.push({
 
         source_text: english,
@@ -1064,13 +915,9 @@ export default function StoryContentEditor({
 
     }
 
-
-
     setImportingSentences(true);
 
     clearMessage();
-
-
 
     const nextTemporaryPosition =
 
@@ -1087,8 +934,6 @@ export default function StoryContentEditor({
             )
 
           ) + 1;
-
-
 
     const rowsToInsert = parsedRows.map(
 
@@ -1116,15 +961,11 @@ export default function StoryContentEditor({
 
     );
 
-
-
     const { error } = await supabase
 
       .from("sentences")
 
       .insert(rowsToInsert);
-
-
 
     if (error) {
 
@@ -1134,15 +975,11 @@ export default function StoryContentEditor({
 
       );
 
-
-
       setImportingSentences(false);
 
       return;
 
     }
-
-
 
     try {
 
@@ -1150,15 +987,11 @@ export default function StoryContentEditor({
 
       await loadContent(false);
 
-
-
       setBulkImportOpen(false);
 
       setBulkImportChapterId(null);
 
       setBulkImportText("");
-
-
 
       setMessage(
 
@@ -1178,8 +1011,6 @@ export default function StoryContentEditor({
 
       await loadContent(false);
 
-
-
       setMessage(
 
         `Sentences were imported, but positions could not be reordered: ${
@@ -1196,21 +1027,15 @@ export default function StoryContentEditor({
 
     }
 
-
-
     setImportingSentences(false);
 
   }
-
-
 
   // --------------------------------------------------
 
   // BULK VOCABULARY IMPORT
 
   // --------------------------------------------------
-
-
 
   function openBulkVocabularyImport(
 
@@ -1220,15 +1045,12 @@ export default function StoryContentEditor({
 
     clearMessage();
 
-
-
+    expandChapter(chapterId);
     setBulkImportOpen(false);
 
     setBulkImportChapterId(null);
 
     setBulkImportText("");
-
-
 
     setBulkVocabularyChapterId(chapterId);
 
@@ -1237,8 +1059,6 @@ export default function StoryContentEditor({
     setBulkVocabularyOpen(true);
 
   }
-
-
 
   function cancelBulkVocabularyImport() {
 
@@ -1250,19 +1070,13 @@ export default function StoryContentEditor({
 
   }
 
-
-
   async function importBulkVocabulary() {
 
     if (importingVocabulary) return;
 
-
-
     const cleanText =
 
       bulkVocabularyText.trim();
-
-
 
     if (!cleanText) {
 
@@ -1276,8 +1090,6 @@ export default function StoryContentEditor({
 
     }
 
-
-
     if (!bulkVocabularyChapterId) {
 
       setMessage(
@@ -1289,8 +1101,6 @@ export default function StoryContentEditor({
       return;
 
     }
-
-
 
     const chapterSentences = sentences
 
@@ -1312,8 +1122,6 @@ export default function StoryContentEditor({
 
       );
 
-
-
     if (chapterSentences.length === 0) {
 
       setMessage(
@@ -1326,8 +1134,6 @@ export default function StoryContentEditor({
 
     }
 
-
-
     const lines = cleanText
 
       .split("\n")
@@ -1336,20 +1142,21 @@ export default function StoryContentEditor({
 
       .filter(Boolean);
 
-
-
     type ParsedVocabulary = {
+
   sentenceId: string;
+
   word: string;
+
   tapText: string;
+
   translation: string;
+
   pronunciation: string;
+
 };
 
-
     const parsedRows: ParsedVocabulary[] = [];
-
-
 
     for (
 
@@ -1367,8 +1174,6 @@ export default function StoryContentEditor({
 
         .map((part) => part.trim());
 
-
-
       if (parts.length < 4) {
 
         setMessage(
@@ -1385,19 +1190,21 @@ export default function StoryContentEditor({
 
       }
 
-
-
       const sentenceNumber = Number(parts[0]);
+
 const word = parts[1];
+
 const tapText = parts[2];
+
 const translation = parts[3];
 
 const pronunciation = parts
+
   .slice(4)
+
   .join("|")
+
   .trim();
-
-
 
       if (
 
@@ -1421,8 +1228,6 @@ const pronunciation = parts
 
       }
 
-
-
       if (
 
         sentenceNumber >
@@ -1445,8 +1250,6 @@ const pronunciation = parts
 
       }
 
-
-
       if (!word || !tapText || !translation) {
 
         setMessage(
@@ -1463,8 +1266,6 @@ const pronunciation = parts
 
       }
 
-
-
       const targetSentence =
 
         chapterSentences[
@@ -1473,25 +1274,25 @@ const pronunciation = parts
 
         ];
 
-
-
      parsedRows.push({
+
   sentenceId: targetSentence.id,
+
   word,
+
   tapText,
+
   translation,
+
   pronunciation,
+
 });
 
     }
 
-
-
     setImportingVocabulary(true);
 
     clearMessage();
-
-
 
     const sentenceIds =
 
@@ -1500,8 +1301,6 @@ const pronunciation = parts
         (sentence) => sentence.id
 
       );
-
-
 
     const {
 
@@ -1521,8 +1320,6 @@ const pronunciation = parts
 
       .in("sentence_id", sentenceIds);
 
-
-
     if (existingVocabularyError) {
 
       setMessage(
@@ -1537,13 +1334,9 @@ const pronunciation = parts
 
     }
 
-
-
     const nextSortOrders =
 
       new Map<string, number>();
-
-
 
     for (const sentence of chapterSentences) {
 
@@ -1560,8 +1353,6 @@ const pronunciation = parts
           sentence.id
 
       );
-
-
 
       const highestSortOrder =
 
@@ -1581,8 +1372,6 @@ const pronunciation = parts
 
             );
 
-
-
       nextSortOrders.set(
 
         sentence.id,
@@ -1592,8 +1381,6 @@ const pronunciation = parts
       );
 
     }
-
-
 
     const rowsToInsert = parsedRows.map(
 
@@ -1607,8 +1394,6 @@ const pronunciation = parts
 
           ) ?? 1;
 
-
-
         nextSortOrders.set(
 
           row.sentenceId,
@@ -1617,31 +1402,33 @@ const pronunciation = parts
 
         );
 
-
-
         return {
+
   sentence_id: row.sentenceId,
+
   word: row.word,
+
   tap_text: row.tapText,
+
   translation: row.translation,
+
   pronunciation:
+
     row.pronunciation,
+
   sort_order: sortOrder,
+
 };
 
       }
 
     );
 
-
-
     const { error } = await supabase
 
       .from("vocabulary_items")
 
       .insert(rowsToInsert);
-
-
 
     if (error) {
 
@@ -1657,15 +1444,11 @@ const pronunciation = parts
 
     }
 
-
-
     setBulkVocabularyOpen(false);
 
     setBulkVocabularyChapterId(null);
 
     setBulkVocabularyText("");
-
-
 
     setMessage(
 
@@ -1681,13 +1464,9 @@ const pronunciation = parts
 
     );
 
-
-
     setImportingVocabulary(false);
 
   }
-
-
 
   // --------------------------------------------------
 
@@ -1695,13 +1474,9 @@ const pronunciation = parts
 
   // --------------------------------------------------
 
-
-
   function openAddChapter() {
 
     clearMessage();
-
-
 
     if (
 
@@ -1721,15 +1496,11 @@ const pronunciation = parts
 
     }
 
-
-
     setAddingChapter(true);
 
     setNewChapterTitle("");
 
   }
-
-
 
   function cancelAddChapter() {
 
@@ -1739,19 +1510,13 @@ const pronunciation = parts
 
   }
 
-
-
   async function createChapter() {
 
     if (creatingChapter) return;
 
-
-
     const cleanTitle =
 
       newChapterTitle.trim();
-
-
 
     if (!cleanTitle) {
 
@@ -1765,13 +1530,9 @@ const pronunciation = parts
 
     }
 
-
-
     setCreatingChapter(true);
 
     clearMessage();
-
-
 
     const nextChapterNumber =
 
@@ -1791,8 +1552,6 @@ const pronunciation = parts
 
           ) + 1;
 
-
-
     const nextSortOrder =
 
       chapters.length === 0
@@ -1810,8 +1569,6 @@ const pronunciation = parts
             )
 
           ) + 1;
-
-
 
     const { error } = await supabase
 
@@ -1831,8 +1588,6 @@ const pronunciation = parts
 
       });
 
-
-
     if (error) {
 
       setMessage(
@@ -1847,17 +1602,11 @@ const pronunciation = parts
 
     }
 
-
-
     await loadContent(false);
-
-
 
     setAddingChapter(false);
 
     setNewChapterTitle("");
-
-
 
     setMessage(
 
@@ -1865,13 +1614,9 @@ const pronunciation = parts
 
     );
 
-
-
     setCreatingChapter(false);
 
   }
-
-
 
   function startEditingChapter(
 
@@ -1880,8 +1625,6 @@ const pronunciation = parts
   ) {
 
     clearMessage();
-
-
 
     setEditingChapterId(chapter.id);
 
@@ -1895,8 +1638,6 @@ const pronunciation = parts
 
   }
 
-
-
   function cancelEditingChapter() {
 
     setEditingChapterId(null);
@@ -1907,8 +1648,6 @@ const pronunciation = parts
 
   }
 
-
-
   async function saveChapter(
 
     chapter: Chapter
@@ -1917,21 +1656,15 @@ const pronunciation = parts
 
     if (savingChapter) return;
 
-
-
     const cleanTitle =
 
       editChapterTitle.trim();
-
-
 
     const chapterNumber = Number(
 
       editChapterNumber
 
     );
-
-
 
     if (!cleanTitle) {
 
@@ -1944,8 +1677,6 @@ const pronunciation = parts
       return;
 
     }
-
-
 
     if (
 
@@ -1965,13 +1696,9 @@ const pronunciation = parts
 
     }
 
-
-
     setSavingChapter(true);
 
     clearMessage();
-
-
 
     const { error } = await supabase
 
@@ -1989,8 +1716,6 @@ const pronunciation = parts
 
       .eq("id", chapter.id);
 
-
-
     if (error) {
 
       setMessage(
@@ -2005,15 +1730,11 @@ const pronunciation = parts
 
     }
 
-
-
     try {
 
       await reorderBook();
 
       await loadContent(false);
-
-
 
       setEditingChapterId(null);
 
@@ -2021,15 +1742,11 @@ const pronunciation = parts
 
       setEditChapterNumber("");
 
-
-
       setMessage("Chapter saved.");
 
     } catch (reorderError) {
 
       await loadContent(false);
-
-
 
       setMessage(
 
@@ -2047,13 +1764,9 @@ const pronunciation = parts
 
     }
 
-
-
     setSavingChapter(false);
 
   }
-
-
 
   async function deleteChapter(
 
@@ -2062,8 +1775,6 @@ const pronunciation = parts
   ) {
 
     if (deletingChapterId) return;
-
-
 
     const chapterSentences =
 
@@ -2077,11 +1788,7 @@ const pronunciation = parts
 
       );
 
-
-
     let confirmed = false;
-
-
 
     if (chapterSentences.length > 0) {
 
@@ -2099,11 +1806,7 @@ const pronunciation = parts
 
       );
 
-
-
       if (typedTitle === null) return;
-
-
 
       if (typedTitle !== chapter.title) {
 
@@ -2116,8 +1819,6 @@ const pronunciation = parts
         return;
 
       }
-
-
 
       confirmed = window.confirm(
 
@@ -2135,17 +1836,11 @@ const pronunciation = parts
 
     }
 
-
-
     if (!confirmed) return;
-
-
 
     setDeletingChapterId(chapter.id);
 
     clearMessage();
-
-
 
     const { error } = await supabase
 
@@ -2154,8 +1849,6 @@ const pronunciation = parts
       .delete()
 
       .eq("id", chapter.id);
-
-
 
     if (error) {
 
@@ -2171,23 +1864,17 @@ const pronunciation = parts
 
     }
 
-
-
     try {
 
       await reorderBook();
 
       await loadContent(false);
 
-
-
       setMessage("Chapter deleted.");
 
     } catch (reorderError) {
 
       await loadContent(false);
-
-
 
       setMessage(
 
@@ -2205,21 +1892,15 @@ const pronunciation = parts
 
     }
 
-
-
     setDeletingChapterId(null);
 
   }
-
-
 
   // --------------------------------------------------
 
   // SENTENCE CARD
 
   // --------------------------------------------------
-
-
 
   function renderSentence(
 
@@ -2231,13 +1912,9 @@ const pronunciation = parts
 
       editingSentenceId === sentence.id;
 
-
-
     const isDeleting =
 
       deletingSentenceId === sentence.id;
-
-
 
     return (
 
@@ -2257,8 +1934,6 @@ const pronunciation = parts
 
           </div>
 
-
-
           <div className="min-w-0 flex-1">
 
             {isEditing ? (
@@ -2277,8 +1952,6 @@ const pronunciation = parts
 
                 />
 
-
-
                 <EditorField
 
                   label={learningLanguageLabel}
@@ -2292,8 +1965,6 @@ const pronunciation = parts
                   prominent
 
                 />
-
-
 
                 <EditorField
 
@@ -2310,8 +1981,6 @@ const pronunciation = parts
                   rows={2}
 
                 />
-
-
 
                 <div className="flex justify-end gap-2 border-t border-neutral-200 pt-4">
 
@@ -2334,8 +2003,6 @@ const pronunciation = parts
                     Cancel
 
                   </button>
-
-
 
                   <button
 
@@ -2379,8 +2046,6 @@ const pronunciation = parts
 
                     </p>
 
-
-
                     <p className="mt-1 text-sm leading-6 text-neutral-700">
 
                       {sentence.source_text}
@@ -2388,8 +2053,6 @@ const pronunciation = parts
                     </p>
 
                   </div>
-
-
 
                   <div className="flex shrink-0 gap-2">
 
@@ -2432,8 +2095,6 @@ const pronunciation = parts
                       Edit
 
                     </button>
-
-
 
                     <button
 
@@ -2483,8 +2144,6 @@ const pronunciation = parts
 
                 </div>
 
-
-
                 <div className="mt-4">
 
                   <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
@@ -2492,8 +2151,6 @@ const pronunciation = parts
                     {learningLanguageLabel}
 
                   </p>
-
-
 
                   <p className="mt-1 text-base font-medium leading-7">
 
@@ -2507,8 +2164,6 @@ const pronunciation = parts
 
                 </div>
 
-
-
                 {sentence.pronunciation && (
 
                   <div className="mt-4">
@@ -2518,8 +2173,6 @@ const pronunciation = parts
                       Pronunciation
 
                     </p>
-
-
 
                     <p className="mt-1 text-sm leading-6 text-neutral-500">
 
@@ -2535,12 +2188,14 @@ const pronunciation = parts
 
                 )}
 
-
-
                 <SentenceVocabularyEditor
+
   sentenceId={sentence.id}
+
   learningLanguage={learningLanguage}
+
 />
+
               </>
 
             )}
@@ -2555,15 +2210,11 @@ const pronunciation = parts
 
   }
 
-
-
   // --------------------------------------------------
 
   // LOADING / ERROR
 
   // --------------------------------------------------
-
-
 
   if (loading) {
 
@@ -2583,8 +2234,6 @@ const pronunciation = parts
 
   }
 
-
-
   if (error) {
 
     return (
@@ -2596,8 +2245,6 @@ const pronunciation = parts
           Story content
 
         </h2>
-
-
 
         <p className="mt-3 text-sm text-red-600">
 
@@ -2611,23 +2258,17 @@ const pronunciation = parts
 
   }
 
-
-
   // --------------------------------------------------
 
   // UI
 
   // --------------------------------------------------
 
-
-
   return (
 
     <section className="rounded-3xl border border-black/5 bg-white p-7 shadow-sm">
 
       {/* HEADER */}
-
-
 
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-100 pb-6">
 
@@ -2638,8 +2279,6 @@ const pronunciation = parts
             Story content
 
           </h2>
-
-
 
           <p className="mt-1 text-sm text-neutral-500">
 
@@ -2677,8 +2316,6 @@ const pronunciation = parts
 
         </div>
 
-
-
         <div className="flex gap-2">
 
           {chapters.length === 0 && (
@@ -2711,8 +2348,6 @@ const pronunciation = parts
 
           )}
 
-
-
           <button
 
             type="button"
@@ -2741,11 +2376,31 @@ const pronunciation = parts
 
       </div>
 
-
+      {chapters.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-neutral-50 px-4 py-3">
+          <p className="text-xs font-medium text-neutral-500">
+            Open only the chapter you are working on to keep this page compact.
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={expandAllChapters}
+              className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-neutral-50"
+            >
+              Expand All
+            </button>
+            <button
+              type="button"
+              onClick={collapseAllChapters}
+              className="rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold hover:bg-neutral-50"
+            >
+              Collapse All
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* MESSAGE */}
-
-
 
       {message && (
 
@@ -2815,50 +2470,54 @@ const pronunciation = parts
 
       )}
 
-      {/* FULL BOOK IMPORT */}
+      {/* BOOK TOOLS */}
 
+      <details className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50/70">
+        <summary className="cursor-pointer select-none px-5 py-4 text-sm font-semibold text-neutral-800">
+          Book tools
+          <span className="ml-2 font-normal text-neutral-400">
+            Full-book import, processed import and chapter adaptation
+          </span>
+        </summary>
 
-<FullBookImporter
-  bookId={bookId}
-  existingChapterCount={chapters.length}
-  existingSentenceCount={sentences.length}
-  onImported={() => loadContent(false)}
-/>
+        <div className="border-t border-neutral-200 p-5">
+          <FullBookImporter
+            bookId={bookId}
+            existingChapterCount={chapters.length}
+            existingSentenceCount={sentences.length}
+            onImported={() => loadContent(false)}
+          />
 
-{/* PROCESSED / MASTER BOOK IMPORT */}
+          <ProcessedBookImporter
+            bookId={bookId}
+            expectedLearningLanguage={learningLanguage}
+            existingChapterCount={chapters.length}
+            existingSentenceCount={sentences.length}
+            onImported={() => loadContent(false)}
+          />
 
-<ProcessedBookImporter
-  bookId={bookId}
-  expectedLearningLanguage={learningLanguage}
-  existingChapterCount={chapters.length}
-  existingSentenceCount={sentences.length}
-  onImported={() => loadContent(false)}
-/>
-
-<div className="mt-6">
-  <ChapterAdaptationImporter
-    chapters={chapters}
-    sentences={sentences}
-    learningLanguageLabel={learningLanguageLabel}
-    onImported={() => loadContent(false)}
-  />
-</div>
+          <div className="mt-6">
+            <ChapterAdaptationImporter
+              chapters={chapters}
+              sentences={sentences}
+              learningLanguageLabel={learningLanguageLabel}
+              onImported={() => loadContent(false)}
+            />
+          </div>
+        </div>
+      </details>
 
       {/* ADD CHAPTER */}
 
-
-
       {addingChapter && (
 
-        <div className="mt-6 rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5">
+        <div className="fixed left-1/2 top-1/2 z-50 max-h-[85vh] w-[min(920px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5 shadow-2xl">
 
           <h3 className="font-semibold">
 
             Add chapter
 
           </h3>
-
-
 
           <p className="mt-1 text-sm text-neutral-500">
 
@@ -2884,8 +2543,6 @@ const pronunciation = parts
 
           </p>
 
-
-
           <div className="mt-5">
 
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-400">
@@ -2893,8 +2550,6 @@ const pronunciation = parts
               Chapter title
 
             </label>
-
-
 
             <input
 
@@ -2920,8 +2575,6 @@ const pronunciation = parts
 
           </div>
 
-
-
           <div className="mt-5 flex justify-end gap-2 border-t border-neutral-200 pt-5">
 
             <button
@@ -2939,8 +2592,6 @@ const pronunciation = parts
               Cancel
 
             </button>
-
-
 
             <button
 
@@ -2968,15 +2619,11 @@ const pronunciation = parts
 
       )}
 
-
-
       {/* BULK SENTENCE IMPORT */}
-
-
 
       {bulkImportOpen && (
 
-        <div className="mt-6 rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5">
+        <div className="fixed left-1/2 top-1/2 z-50 max-h-[85vh] w-[min(920px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5 shadow-2xl">
 
           <div className="flex flex-wrap items-start justify-between gap-4">
 
@@ -2987,8 +2634,6 @@ const pronunciation = parts
                 Bulk import sentences
 
               </h3>
-
-
 
               <p className="mt-1 text-sm text-neutral-500">
 
@@ -3010,8 +2655,6 @@ const pronunciation = parts
 
             </div>
 
-
-
             <div className="rounded-lg bg-white px-3 py-2 text-xs text-neutral-500 shadow-sm">
 
               English | {learningLanguageLabel} |
@@ -3022,8 +2665,6 @@ const pronunciation = parts
 
           </div>
 
-
-
           <div className="mt-5">
 
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-400">
@@ -3031,8 +2672,6 @@ const pronunciation = parts
               Sentences
 
             </label>
-
-
 
             <textarea
 
@@ -3060,8 +2699,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
             />
 
-
-
             <p className="mt-2 text-xs leading-5 text-neutral-400">
 
               One sentence per line.
@@ -3077,8 +2714,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
             </p>
 
           </div>
-
-
 
           <div className="mt-5 flex items-center justify-between gap-4 border-t border-neutral-200 pt-5">
 
@@ -3103,8 +2738,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
               lines ready
 
             </p>
-
-
 
             <div className="flex gap-2">
 
@@ -3131,8 +2764,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                 Cancel
 
               </button>
-
-
 
               <button
 
@@ -3172,15 +2803,11 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
       )}
 
-
-
       {/* BULK VOCABULARY IMPORT */}
-
-
 
       {bulkVocabularyOpen && (
 
-        <div className="mt-6 rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5">
+        <div className="fixed left-1/2 top-1/2 z-50 max-h-[85vh] w-[min(920px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5 shadow-2xl">
 
           <div className="flex flex-wrap items-start justify-between gap-4">
 
@@ -3191,8 +2818,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                 Bulk import vocabulary
 
               </h3>
-
-
 
               <p className="mt-1 text-sm text-neutral-500">
 
@@ -3214,8 +2839,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
             </div>
 
-
-
             <div className="rounded-lg bg-white px-3 py-2 text-xs text-neutral-500 shadow-sm">
 
               Sentence # | {learningLanguageLabel} |
@@ -3226,8 +2849,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
           </div>
 
-
-
           <div className="mt-5">
 
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-400">
@@ -3235,8 +2856,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
               Vocabulary
 
             </label>
-
-
 
             <textarea
 
@@ -3270,8 +2889,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
             />
 
-
-
             <p className="mt-2 text-xs leading-5 text-neutral-400">
 
               The first number is the
@@ -3287,8 +2904,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
             </p>
 
           </div>
-
-
 
           <div className="mt-5 flex items-center justify-between gap-4 border-t border-neutral-200 pt-5">
 
@@ -3313,8 +2928,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
               lines ready
 
             </p>
-
-
 
             <div className="flex gap-2">
 
@@ -3341,8 +2954,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                 Cancel
 
               </button>
-
-
 
               <button
 
@@ -3382,23 +2993,17 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
       )}
 
-
-
       {/* ADD SENTENCE */}
-
-
 
       {addingSentence && (
 
-        <div className="mt-6 rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5">
+        <div className="fixed left-1/2 top-1/2 z-50 max-h-[85vh] w-[min(920px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-neutral-200 bg-[#fafaf9] p-5 shadow-2xl">
 
           <h3 className="font-semibold">
 
             Add sentence
 
           </h3>
-
-
 
           <p className="mt-1 text-sm text-neutral-500">
 
@@ -3422,8 +3027,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
           </p>
 
-
-
           <div className="mt-5 space-y-5">
 
             <EditorField
@@ -3440,8 +3043,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
             />
 
-
-
             <EditorField
 
               label={learningLanguageLabel}
@@ -3457,8 +3058,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
               prominent
 
             />
-
-
 
             <EditorField
 
@@ -3479,8 +3078,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
             />
 
           </div>
-
-
 
           <div className="mt-5 flex justify-end gap-2 border-t border-neutral-200 pt-5">
 
@@ -3507,8 +3104,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
               Cancel
 
             </button>
-
-
 
             <button
 
@@ -3540,11 +3135,7 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
       )}
 
-
-
       {/* EMPTY / STORY CONTENT */}
-
-
 
       {sentences.length === 0 &&
 
@@ -3558,8 +3149,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
           </h3>
 
-
-
           <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-neutral-500">
 
             Add individual sentences or
@@ -3572,7 +3161,7 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
       ) : chapters.length > 0 ? (
 
-        <div className="mt-8 space-y-10">
+        <div className="mt-6 space-y-3">
 
           {chapters.map((chapter) => {
 
@@ -3600,7 +3189,7 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
                 );
 
-
+            const isExpanded = expandedChapterIds.has(chapter.id);
 
             const isEditingChapter =
 
@@ -3608,15 +3197,11 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
               chapter.id;
 
-
-
             const isDeletingChapter =
 
               deletingChapterId ===
 
               chapter.id;
-
-
 
             return (
 
@@ -3624,7 +3209,7 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
                 key={chapter.id}
 
-                className="border-t border-neutral-100 pt-7 first:border-t-0 first:pt-0"
+                className="overflow-visible rounded-2xl border border-neutral-200 bg-white shadow-sm"
 
               >
 
@@ -3638,8 +3223,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
                     </h3>
 
-
-
                     <div className="mt-5 grid gap-4 sm:grid-cols-[120px_1fr]">
 
                       <div>
@@ -3649,8 +3232,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                           Number
 
                         </label>
-
-
 
                         <input
 
@@ -3688,8 +3269,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
                       </div>
 
-
-
                       <div>
 
                         <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-neutral-400">
@@ -3697,8 +3276,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                           Title
 
                         </label>
-
-
 
                         <input
 
@@ -3734,8 +3311,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
                     </div>
 
-
-
                     <div className="mt-5 flex justify-end gap-2">
 
                       <button
@@ -3761,8 +3336,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                         Cancel
 
                       </button>
-
-
 
                       <button
 
@@ -3802,7 +3375,7 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
                 ) : (
 
-                  <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+                  <div className="sticky top-2 z-20 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white px-5 py-4 shadow-sm">
 
                     <div>
 
@@ -3818,15 +3391,11 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
                       </p>
 
-
-
                       <h3 className="mt-1 text-lg font-semibold">
 
                         {chapter.title}
 
                       </h3>
-
-
 
                       <p className="mt-1 text-xs text-neutral-400">
 
@@ -3848,9 +3417,15 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
                     </div>
 
-
-
                     <div className="flex flex-wrap gap-2">
+
+                      <button
+                        type="button"
+                        onClick={() => toggleChapter(chapter.id)}
+                        className="rounded-lg bg-[#181818] px-3 py-2 text-xs font-semibold text-white transition hover:bg-black"
+                      >
+                        {isExpanded ? "Collapse" : "Open Chapter"}
+                      </button>
 
                       <button
 
@@ -3895,8 +3470,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                         Bulk Sentences
 
                       </button>
-
-
 
                       <button
 
@@ -3946,8 +3519,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
                       </button>
 
-
-
                       <button
 
                         type="button"
@@ -3988,8 +3559,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
                       </button>
 
-
-
                       <button
 
                         type="button"
@@ -4029,8 +3598,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
                         Edit Chapter
 
                       </button>
-
-
 
                       <button
 
@@ -4076,36 +3643,20 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
 
                 )}
 
-
-
-                {chapterSentences.length ===
-
-                0 ? (
-
-                  <div className="rounded-2xl border border-dashed border-neutral-200 p-6 text-center">
-
-                    <p className="text-sm text-neutral-400">
-
-                      No sentences in this
-
-                      chapter.
-
-                    </p>
-
-                  </div>
-
-                ) : (
-
-                  <div className="space-y-3">
-
-                    {chapterSentences.map(
-
-                      renderSentence
-
+                {isExpanded && (
+                  <div className="border-t border-neutral-100 p-5">
+                    {chapterSentences.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-neutral-200 p-6 text-center">
+                        <p className="text-sm text-neutral-400">
+                          No sentences in this chapter.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {chapterSentences.map(renderSentence)}
+                      </div>
                     )}
-
                   </div>
-
                 )}
 
               </div>
@@ -4135,8 +3686,6 @@ But I hated his pale blue eye. | Но я ненавидел его бледно-
   );
 
 }
-
-
 
 function EditorField({
 
@@ -4177,8 +3726,6 @@ function EditorField({
         {label}
 
       </label>
-
-
 
       <textarea
 
