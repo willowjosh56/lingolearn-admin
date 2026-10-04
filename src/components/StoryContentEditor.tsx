@@ -7,8 +7,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 import SentenceVocabularyEditor from "@/components/SentenceVocabularyEditor";
-
 import FullBookImporter from "@/components/FullBookImporter";
+import ChapterAdaptationImporter from "@/components/ChapterAdaptationImporter";
+import ProcessedBookImporter from "@/components/ProcessedBookImporter";
+
 
 type Chapter = {
 
@@ -27,23 +29,15 @@ type Chapter = {
 
 
 type Sentence = {
-
   id: string;
-
   book_id: string;
-
   chapter_id: string | null;
-
   position: number;
-
   source_text: string;
-
+  adapted_text: string | null;
   translated_text: string;
-
   pronunciation: string | null;
-
 };
-
 
 
 type StoryContentEditorProps = {
@@ -358,7 +352,7 @@ export default function StoryContentEditor({
 
         .select(
 
-          "id, book_id, chapter_id, position, source_text, translated_text, pronunciation"
+          "id, book_id, chapter_id, position, source_text, adapted_text, translated_text, pronunciation"
 
         )
 
@@ -2823,6 +2817,7 @@ const pronunciation = parts
 
       {/* FULL BOOK IMPORT */}
 
+
 <FullBookImporter
   bookId={bookId}
   existingChapterCount={chapters.length}
@@ -2830,7 +2825,24 @@ const pronunciation = parts
   onImported={() => loadContent(false)}
 />
 
+{/* PROCESSED / MASTER BOOK IMPORT */}
 
+<ProcessedBookImporter
+  bookId={bookId}
+  expectedLearningLanguage={learningLanguage}
+  existingChapterCount={chapters.length}
+  existingSentenceCount={sentences.length}
+  onImported={() => loadContent(false)}
+/>
+
+<div className="mt-6">
+  <ChapterAdaptationImporter
+    chapters={chapters}
+    sentences={sentences}
+    learningLanguageLabel={learningLanguageLabel}
+    onImported={() => loadContent(false)}
+  />
+</div>
 
       {/* ADD CHAPTER */}
 
