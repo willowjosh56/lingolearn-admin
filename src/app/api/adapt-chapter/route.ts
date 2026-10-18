@@ -154,7 +154,7 @@ Return exactly one result for every input sentence and preserve the original ord
     return NextResponse.json({
       success: true,
       model: "gpt-5.6-luna",
-      targetLanguage,
+      targetLanguage, 
       level,
       sentences: parsed.sentences,
     });

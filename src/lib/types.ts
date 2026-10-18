@@ -18,6 +18,8 @@ export type Book = {
 
   estimated_minutes: number | null;
   cover_image_path: string | null;
+  mobile_cover_image_path?: string | null;
+
 
   status: "draft" | "published";
   sort_order: number;

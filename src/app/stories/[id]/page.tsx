@@ -8,6 +8,7 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { Book } from "@/lib/types";
+import StoryCoverManager from "@/components/StoryCoverManager";
 import StoryContentEditor from "@/components/StoryContentEditor";
 type Category =
   | "everyday"
@@ -737,118 +738,13 @@ export default function StoryEditorPage() {
                 )}
               </div>
             </div>
-            {/* COVER */}
-            <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm">
-              <div>
-                <h2 className="font-semibold">
-                  Cover
-                </h2>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Artwork shown in the story library.
-                </p>
-              </div>
-              <div className="mt-5 overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-100">
-                {coverPreview ? (
-                  <img
-                    src={coverPreview}
-                    alt="New cover preview"
-                    className="aspect-[16/9] w-full object-cover"
-                  />
-                ) : currentCoverURL ? (
-                  <img
-                    src={currentCoverURL}
-                    alt={`${book.title} cover`}
-                    className="aspect-[16/9] w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex aspect-[16/9] items-center justify-center">
-                    <p className="text-sm text-neutral-400">
-                      No cover
-                    </p>
-                  </div>
-                )}
-              </div>
-              {book.cover_image_path &&
-                !coverFile && (
-                  <p className="mt-3 truncate text-xs text-neutral-400">
-                    {book.cover_image_path}
-                  </p>
-                )}
-              {coverFile && (
-                <div className="mt-4 rounded-xl bg-[#f7f7f5] p-3">
-                  <p className="truncate text-sm font-medium">
-                    {coverFile.name}
-                  </p>
-                  <p className="mt-1 text-xs text-neutral-400">
-                    {(
-                      coverFile.size /
-                      1024 /
-                      1024
-                    ).toFixed(2)}{" "}
-                    MB
-                  </p>
-                </div>
-              )}
-              <div className="mt-5">
-                <label className="block w-full cursor-pointer rounded-xl border border-neutral-200 px-4 py-3 text-center text-sm font-semibold transition hover:bg-neutral-50">
-                  {book.cover_image_path
-                    ? "Choose New Cover"
-                    : "Choose Cover"}
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    onChange={
-                      handleCoverSelection
-                    }
-                    disabled={uploadingCover}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              {coverFile && (
-                <div className="mt-3 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (coverPreview) {
-                        URL.revokeObjectURL(
-                          coverPreview
-                        );
-                      }
-                      setCoverFile(null);
-                      setCoverPreview(null);
-                      setCoverMessage("");
-                    }}
-                    disabled={uploadingCover}
-                    className="flex-1 rounded-xl border border-neutral-200 px-3 py-3 text-sm font-semibold transition hover:bg-neutral-50 disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCoverUpload}
-                    disabled={uploadingCover}
-                    className="flex-1 rounded-xl bg-[#181818] px-3 py-3 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {uploadingCover
-                      ? "Uploading..."
-                      : "Upload Cover"}
-                  </button>
-                </div>
-              )}
-              {coverMessage && (
-                <p
-                  className={`mt-4 text-sm ${
-                    coverMessage ===
-                    "Cover uploaded."
-                      ? "text-green-700"
-                      : "text-red-600"
-                  }`}
-                >
-                  {coverMessage}
-                </p>
-              )}
-            </div>
+            
+{/* DESKTOP AND MOBILE COVERS */}
+<StoryCoverManager
+  book={book}
+  onUpdated={applyBook}
+/>
+
             {/* SAVE */}
             <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-sm">
               <button
