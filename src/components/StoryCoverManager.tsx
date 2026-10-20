@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import { supabase } from "@/lib/supabase";
+import { optimizeCover } from "@/lib/optimizeCover";
 import type { Book } from "@/lib/types";
 
 type CoverKind = "desktop" | "mobile";
@@ -151,31 +152,34 @@ function CoverUploader({
     setMessage("");
     setMessageError(false);
 
-    try {
-      const extension =
-        file.type === "image/png"
-          ? "png"
-          : file.type === "image/webp"
-            ? "webp"
-            : "jpg";
+    
+try {
+  // Convert the selected image to WebP
+  // before uploading it to Supabase.
+  const optimizedFile = await optimizeCover(
+    file,
+    kind
+  );
 
-      const newPath =
-        `${book.id}/${kind}-${crypto.randomUUID()}.${extension}`;
+  const newPath =
+    `${book.id}/${kind}-${crypto.randomUUID()}.webp`;
 
       // Upload the image first.
       const {
         error: uploadError,
       } = await supabase.storage
         .from("book-covers")
-        .upload(
-          newPath,
-          file,
-          {
-            contentType: file.type,
-            cacheControl: "3600",
-            upsert: false,
-          }
-        );
+        
+.upload(
+  newPath,
+  optimizedFile,
+  {
+    contentType: "image/webp",
+    cacheControl: "2592000",
+    upsert: false,
+  }
+);
+
 
       if (uploadError) {
         throw uploadError;
